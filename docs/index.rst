@@ -12,7 +12,14 @@ application.
 Installation
 ------------
 
-Install using setuptools, e.g. (within a virtualenv)::
+``pyramid_ldap`` depends on the `python-ldap <http://www.python-ldap.org/>`
+and `ldappool <https://github.com/mozilla-services/ldappool>`_ packages.
+``python_ldap`` requires OpenLDAP development libraries to be installed
+before it can successfully be installed.  An easy way to get these installed
+on a Debian Linux system is to use ``apt-get build-dep python-ldap``.
+
+After you've got the OpenLDAP dependencies installed, you can install
+``pyramid_ldap`` using setuptools, e.g. (within a virtualenv)::
 
   $ easy_install pyramid_ldap
 
