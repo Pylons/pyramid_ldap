@@ -161,7 +161,7 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
         base_dn, filter_tmpl, scope, cache_period)
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
-                           scope=ldap.SCOPE_SUBTREE, cache_period=600):
+                           scope=ldap.SCOPE_SUBTREE, cache_period=0):
     """ Configurator method to set the LDAP groups search.  ``base_dn`` is
     the DN at which to begin the search.  ``filter_tmpl`` is a string which
     can be used as an LDAP filter: it should contain the replacement value

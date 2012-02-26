@@ -120,7 +120,7 @@ class Test_ldap_set_groups_query(unittest.TestCase):
         self.assertEqual(config.registry.ldap_groups_search.filter_tmpl, 'tmpl')
         self.assertEqual(config.registry.ldap_groups_search.scope,
                          ldap.SCOPE_SUBTREE)
-        self.assertEqual(config.registry.ldap_groups_search.cache_period, 600)
+        self.assertEqual(config.registry.ldap_groups_search.cache_period, 0)
 
 class Test_ldap_set_login_query(unittest.TestCase):
     def _callFUT(self, config, base_dn, filter_tmpl, **kw):
