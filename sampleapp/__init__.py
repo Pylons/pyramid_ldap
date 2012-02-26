@@ -26,13 +26,13 @@ def main(global_config, **settings):
     config.ldap_set_login_query(
         'CN=Users,DC=example,DC=com',
         '(sAMAccountName=%(login)s)',
-        cache_secs=0,
+        cache_period=0,
         )
     config.ldap_set_groups_query(
         'CN=Users,DC=example,DC=com',
         '(member:1.2.840.113556.1.4.1941:=%(userdn)s)',
         #'(&(objectCategory=group)(member=%(dn)s))',
-        cache_secs=60,
+        cache_period=60,
         )
     config.add_route('sampleapp.root', '/')
     config.add_route('sampleapp.login', '/login')

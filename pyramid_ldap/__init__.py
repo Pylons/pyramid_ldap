@@ -137,12 +137,12 @@ class Connector(object):
                 return None
 
 def ldap_set_login_query(config, base_dn, filter_tmpl, 
-                          scope=ldap.SCOPE_ONELEVEL, cache_secs=0):
+                          scope=ldap.SCOPE_ONELEVEL, cache_period=0):
     """ Configurator method to set the LDAP login search.  ``base_dn`` is the
     DN at which to begin the search.  ``filter_tmpl`` is a string which can
     be used as an LDAP filter: it should contain the replacement value
     ``%(login)s``.  Scope is any valid LDAP scope value
-    (e.g. ``ldap.SCOPE_ONELEVEL``).  ``cache_secs`` is the number of seconds
+    (e.g. ``ldap.SCOPE_ONELEVEL``).  ``cache_period`` is the number of seconds
     to cache login search results; if it is 0, login search results will not
     be cached.
 
@@ -158,15 +158,15 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
     a valid login.
     """
     config.registry.ldap_login_search = _LDAPQuery(
-        base_dn, filter_tmpl, scope, cache_secs)
+        base_dn, filter_tmpl, scope, cache_period)
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
-                           scope=ldap.SCOPE_SUBTREE, cache_secs=600):
+                           scope=ldap.SCOPE_SUBTREE, cache_period=600):
     """ Configurator method to set the LDAP groups search.  ``base_dn`` is
     the DN at which to begin the search.  ``filter_tmpl`` is a string which
     can be used as an LDAP filter: it should contain the replacement value
     ``%(userdn)s``.  Scope is any valid LDAP scope value
-    (e.g. ``ldap.SCOPE_SUBTREE``).  ``cache_secs`` is the number of seconds
+    (e.g. ``ldap.SCOPE_SUBTREE``).  ``cache_period`` is the number of seconds
     to cache groups search results; if it is 0, groups search results will
     not be cached.
 
@@ -180,7 +180,7 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
 
     """
     config.registry.ldap_groups_search = _LDAPQuery(
-        base_dn, filter_tmpl, scope, cache_secs)
+        base_dn, filter_tmpl, scope, cache_period)
 
 def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
                retry_delay=.1, use_tls=False, timeout=-1, use_pool=True):

@@ -7,9 +7,6 @@ from pyramid.security import remember, forget
 
 from pyramid_ldap import get_ldap_connector
 
-class LoggedIn(Exception):
-    pass
-
 @view_config(route_name='sampleapp.root', permission='view')
 def logged_in(request):
     return Response('OK')

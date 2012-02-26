@@ -72,7 +72,7 @@ attempts to talk to an Active Directory server:
         base_dn='CN=Users,DC=example,DC=com',
         filter_tmpl='(&(objectCategory=group)(member=%(dn)s))',
         scope = ldap.SCOPE_SUBTREE,
-        cache_secs = 600,
+        cache_period = 600,
         )
 
 Configurator Methods
@@ -111,13 +111,194 @@ the startup phase of your Pyramid application.
    If ``ldap_set_groups_query`` is not called, the
    :meth:`pyramid_ldap.Connector.user_groups` method will not work.
 
+Caching
+-------
+
+The :func:`pyramid_ldap.ldap_set_groups_query` and
+:func:`pyramid_ldap.ldap_set_login_query` methods accept a ``cache_period``
+argument.  It must be an integer.  If it is nonzero, the results of the
+associated query will be kept in memory for a maximum of that many seconds,
+after which they will be flushed.
+
 Usage
 -----
 
-See the ``sampleapp`` sample application in this package for usage
-information.
+Assuming LDAP server and query setup has been done (as per above),
+you can begin using ``pyramid_ldap`` in your application.
 
-XXX need much more.
+Here's a small application which uses the ``pyramid_ldap`` API:
+
+.. code-block:: python
+
+    import ldap
+
+    from pyramid.authentication import AuthTktAuthenticationPolicy
+    from pyramid.authorization import ACLAuthorizationPolicy
+
+    from pyramid.view import (
+        view_config,
+        forbidden_view_config,
+        )
+
+    from pyramid.httpexceptions import HTTPFound
+
+    from pyramid.security import (
+       Allow,
+       Authenticated,
+       remember,
+       forget,
+       )
+
+    from pyramid_ldap import (
+        get_ldap_connector,
+        groupfinder,
+        )
+
+    @view_config(route_name='login',
+                 renderer='templates/login.pt')
+    @forbidden_view_config(renderer='templates/login.pt')
+    def login(request):
+        url = request.current_route_url()
+        login = ''
+        password = ''
+        error = ''
+
+        if 'form.submitted' in request.POST:
+            login = request.POST['login']
+            password = request.POST['password']
+            connector = get_ldap_connector(request)
+            data = connector.authenticate(login, password)
+            if data is not None:
+                dn = data[0]
+                headers = remember(request, dn)
+                return HTTPFound('/', headers=headers)
+            else:
+                error = 'Invalid credentials'
+                
+        return dict(
+            login_url=url,
+            login=login,
+            password=password,
+            error=error,
+            )
+
+    @view_config(route_name='root', permission='view')
+    def logged_in(request):
+        return Response('OK')
+
+    @view_config(route_name='logout')
+    def logout(request):
+        headers = forget(request)
+        return Response('Logged out', headers=headers)
+
+    class RootFactory(object):
+        __acl__ = [(Allow, Authenticated, 'view')]
+        def __init__(self, request):
+            pass
+
+    if __name__ == '__main__':
+        config = Configurator(root_factory=RootFactory)
+
+        config.include('pyramid_ldap')
+
+        config.set_authentication_policy(
+            AuthTktAuthenticationPolicy('seekr1t',
+                                        callback=groupfinder)
+            )
+        config.set_authorization_policy(
+            ACLAuthorizationPolicy()
+            )
+
+        config.ldap_setup(
+            'ldap://ldap.example.com',
+            bind='CN=ldap user,CN=Users,DC=example,DC=com',
+            passwd='ld@pu5er'
+            )
+
+        config.ldap_set_login_query(
+            base_dn='CN=Users,DC=example,DC=com',
+            filter_tmpl='(sAMAccountName=%(login)s)',
+            scope = ldap.SCOPE_ONELEVEL,
+            )
+
+        config.ldap_set_groups_query(
+            base_dn='CN=Users,DC=example,DC=com',
+            filter_tmpl='(&(objectCategory=group)(member=%(dn)s))',
+            scope = ldap.SCOPE_SUBTREE,
+            cache_period = 600,
+            )
+
+    config.add_route('root', '/')
+    config.add_route('login', '/login')
+    config.add_route('logout', '/logout')
+    config.scan('.')
+    return config.make_wsgi_app()
+
+This application sets up for an Active Directory LDAP server on
+``ldap.example.com``.  It passes a ``bind`` DN and ``passwd`` for a user
+capable of doing LDAP queries.
+
+It sets up a login query using a base DN of ``CN=Users,DC=example,DC=com``
+and a filter_tmpl of ``(sAMAccountName=%(login)s)``.  The filter template's
+``%(login)s`` value will be replaced with the login name provided to the
+:meth:`pyramid_ldap.Connector.authenticate` method.  In this case, we're
+using the sAMAccountName as the login parameter (aka the "windows login
+name").
+
+The application also sets up a groups query using a base DN of
+``CN=Users,DC=example,DC=com`` and a filter_tmpl of
+``(&(objectCategory=group)(member=%(dn)s))``.  The filter template's
+``%(dn)s`` value will be replaced with the DN of the user provided as the
+userid inside the :meth:`pyramid_ldap.Connector.user_groups` method.  In this
+case, we're using the ``member`` attribute to match against the DN, returning
+all objects of the ``objectCategory=group`` type.  Unlike the login query, we
+cache the result of each search made via this query for up to 10 minutes (600
+seconds) based on its ``cache_period`` argument.
+
+The ``login`` view is invoked when someone visits ``/login`` or when the user
+is prevented from invoking another view due to its permission settings.  It
+displays a login form.  When the form is submitted, the view obtains the
+login and password passed from the form as well as an LDAP connector instance
+using the :func:`pyramid_ldap.get_ldap_connector` function.
+
+The LDAP connector instance has an
+:meth:`~pyramid_ldap.Connector.authenticate` method which accepts the login
+and password.  It will return a data structure containing the user's DN as
+well as the user attributes if the user exists and his password is correct.
+It will return ``None`` if the user doesn't exist or if the user exists and
+his password is incorrect.
+
+When the user's name and password are correct, the ``login`` view uses the
+``pyramid.security.remember`` API to set headers indicating that the user is
+logged in.  The user's id will be his LDAP DN.
+
+We make use of a canned ``groupfinder`` function to provide group lookup
+support to the built-in AuthTktAuthenticationPolicy.  This groupfinder is
+called for every request that requires authentication.  The groups that an
+authenticated user belongs to will be the DNs of each of his LDAP groups when
+you use this groupfinder.  The groupfinder uses the
+:meth:`pyramid_ldap.Connector.user_groups` method and looks like this:
+
+    def groupfinder(dn, request):
+        connector = get_ldap_connector(request)
+        group_list = connector.user_groups(dn)
+        if group_list is None:
+            return None
+        group_dns = []
+        for dn, attrs in group_list:
+            group_dns.append(dn)
+        return group_dns
+
+The effect of this configuration is that a user is unable to view the
+``root`` view at ``/`` until logging in with successful credentials, because
+it's protected by the ``view`` permission, which is only granted to the
+``Authenticated`` principal based on the root factory's ACL.
+
+The ``logout`` view calls ``pyramid.security.forget`` to obtain headers
+useful for dropping the credentials.
+
+See the ``sampleapp`` sample application inside the ``pyramid_ldap``
+distribution for a working example of the above application.
 
 Logging
 -------
