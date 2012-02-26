@@ -279,6 +279,8 @@ authenticated user belongs to will be the DNs of each of his LDAP groups when
 you use this groupfinder.  The groupfinder uses the
 :meth:`pyramid_ldap.Connector.user_groups` method and looks like this:
 
+.. code-block:: python
+
     def groupfinder(dn, request):
         connector = get_ldap_connector(request)
         group_list = connector.user_groups(dn)
