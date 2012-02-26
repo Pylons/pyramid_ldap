@@ -1,5 +1,6 @@
 import ldap
 import logging
+import pprint
 import time
 
 from pyramid.exceptions import ConfigurationError
@@ -19,6 +20,11 @@ class _LDAPQuery(object):
         self.cache_period = cache_period
         self.last_timeslice = 0
         self.cache = {}
+
+    def __str__(self):
+        return ('base_dn=%(base_dn)s, filter_tmpl=%(filter_tmpl)s, '
+                'scope=%(scope)s, cache_period=%(cache_period)s' % 
+                self.__dict__)
 
     def query_cache(self, cache_key):
         result = None
@@ -159,10 +165,18 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
     The registered search must return one and only one value to be considered
     a valid login.
     """
+    query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
     def register():
-        config.registry.ldap_login_query = _LDAPQuery(
-            base_dn, filter_tmpl, scope, cache_period)
-    config.action('ldap-set-login-query', register)
+        config.registry.ldap_login_query = query
+
+    intr = config.introspectable(
+        'pyramid_ldap login query',
+        None,
+        str(query),
+        'pyramid_ldap login query'
+        )
+        
+    config.action('ldap-set-login-query', register, introspectables=(intr,))
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
                            scope=ldap.SCOPE_SUBTREE, cache_period=0):
@@ -183,10 +197,16 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
             )
 
     """
+    query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
     def register():
-        config.registry.ldap_groups_query = _LDAPQuery(
-            base_dn, filter_tmpl, scope, cache_period)
-    config.action('ldap-set-groups-query', register)
+        config.registry.ldap_groups_query = query
+    intr = config.introspectable(
+        'pyramid_ldap groups query',
+        None,
+        str(query),
+        'pyramid_ldap groups query'
+        )
+    config.action('ldap-set-groups-query', register, introspectables=(intr,))
 
 def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
                retry_delay=.1, use_tls=False, timeout=-1, use_pool=True):
@@ -205,17 +225,24 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     - **use_pool**: activates the pool. If False, will recreate a connector
        each time. **default: True**
     """
-    manager = ConnectionManager(
-            uri=uri, bind=bind, passwd=passwd, size=pool_size, 
-            retry_max=retry_max, retry_delay=retry_delay, use_tls=use_tls, 
-            timeout=timeout, use_pool=use_pool
-            )
+    vals = dict(
+        uri=uri, bind=bind, passwd=passwd, size=pool_size, 
+        retry_max=retry_max, retry_delay=retry_delay, use_tls=use_tls, 
+        timeout=timeout, use_pool=use_pool
+        )
+
+    manager = ConnectionManager(**vals)
     def get_connector(request):
         registry = request.registry
         return Connector(registry, manager)
-    def register():
-        config.set_request_property(get_connector, 'ldap_connector', reify=True)
-    config.action('ldap-setup', register)
+    config.set_request_property(get_connector, 'ldap_connector', reify=True)
+    intr = config.introspectable(
+        'pyramid_ldap setup',
+        None,
+        pprint.pformat(vals),
+        'pyramid_ldap setup'
+        )
+    config.action('ldap-setup', None, introspectables=(intr,))
 
 def get_ldap_connector(request):
     """ Return the LDAP connector attached to the request.  If

@@ -238,9 +238,11 @@ class DummyLDAPConnector(object):
         return self.group_list
         
 class Dummy(object):
-    pass
+    def __init__(self, *arg, **kw):
+        pass
     
 class DummyConfig(object):
+    introspectable = Dummy
     def __init__(self):
         self.registry = Dummy()
         self.directives = []
@@ -253,8 +255,9 @@ class DummyConfig(object):
         self.prop_name = name
         self.prop = prop
 
-    def action(self, discriminator, callable):
-        callable()
+    def action(self, discriminator, callable, introspectables=()):
+        if callable:
+            callable()
     
 class DummyManager(object):
     def __init__(self, with_errors=()):
