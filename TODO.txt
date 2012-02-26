@@ -1,2 +1,5 @@
 - User object / attribute mappings.
 
+- More granular query caching (per search term).
+
+
