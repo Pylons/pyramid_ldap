@@ -202,7 +202,7 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     manager = ConnectionManager(
             uri=uri, bind=bind, passwd=passwd, size=pool_size, 
             retry_max=retry_max, retry_delay=retry_delay, use_tls=use_tls, 
-            timeout=-1, use_pool=use_pool
+            timeout=timeout, use_pool=use_pool
             )
     def get_connector(request):
         registry = request.registry
