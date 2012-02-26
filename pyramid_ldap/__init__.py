@@ -82,7 +82,8 @@ class Connector(object):
         distinguished name of the authenticated user.  Attrdict will be a
         dictionary mapping LDAP user attributes to sequences of values.  The
         keys and values in the dictionary values provided will be decoded
-        from UTF-8, recursively, where possible.
+        from UTF-8, recursively, where possible.  The dictionary returned is
+        a case-insensitive dictionary implemenation.
 
         If :meth:`pyramid.config.Configurator.ldap_set_login_query` was not
         called, using this function will raise an
@@ -116,7 +117,8 @@ class Connector(object):
         distinguished name of the group.  Attrdict will be a dictionary
         mapping LDAP group attributes to sequences of values.  The keys and
         values in the dictionary values provided will be decoded from UTF-8,
-        recursively, where possible.
+        recursively, where possible.  The dictionary returned is a
+        case-insensitive dictionary implemenation.
         
         If :meth:`pyramid.config.Configurator.ldap_set_groups_query` was not
         called, using this function will raise an
