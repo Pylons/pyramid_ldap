@@ -234,25 +234,29 @@ Here's a small application which uses the ``pyramid_ldap`` API:
         config.scan('.')
         return config.make_wsgi_app()
 
-This application sets up for an LDAP server on ``ldap.example.com``.  It
-passes a ``bind`` DN and ``passwd`` for a user capable of doing LDAP queries.
+This application sets up for an LDAP server on ``ldap.example.com`` using
+:func:`pyramid_ldap.ldap_setup`.  It passes a ``bind`` DN and ``passwd`` for
+a user capable of doing LDAP queries.
 
-It sets up a login query using a base DN of ``CN=Users,DC=example,DC=com``
-and a filter_tmpl of ``(sAMAccountName=%(login)s)``.  The filter template's
-``%(login)s`` value will be replaced with the login name provided to the
+It sets up a login query using :func:`pyramid_ldap.ldap_set_login_query`
+using a base DN of ``CN=Users,DC=example,DC=com`` and a filter_tmpl of
+``(sAMAccountName=%(login)s)``.  The filter template's ``%(login)s`` value
+will be replaced with the login name provided to the
 :meth:`pyramid_ldap.Connector.authenticate` method.  In this case, we're
 using Active Directory, and we'd like to use the sAMAccountName as the login
 parameter (aka the "windows login name").
 
-The application also sets up a groups query using a base DN of
+The application also sets up a groups query using
+:func:`pyramid_ldap.ldap_set_groups_query` using a base DN of
 ``CN=Users,DC=example,DC=com`` and a filter_tmpl of
-``(&(objectCategory=group)(member=%(dn)s))``.  The filter template's
-``%(dn)s`` value will be replaced with the DN of the user provided as the
-userid inside the :meth:`pyramid_ldap.Connector.user_groups` method.  In this
-case, we're using the ``member`` attribute to match against the DN, returning
-all objects of the ``objectCategory=group`` type as group results.  Unlike
-the login query, we cache the result of each search made via this query for
-up to 10 minutes (600 seconds) based on its ``cache_period`` argument.
+``(&(objectCategory=group)(member=%(dn)s))``.  The group query's filter
+template's ``%(dn)s`` value will be replaced with the DN of the user provided
+as the userid by the :meth:`pyramid_ldap.Connector.user_groups` method, in
+order to look up all the groups to which the user belongs.  In this case,
+we're using the ``member`` attribute to match against the DN, returning all
+objects of the ``objectCategory=group`` type as group results.  Unlike the
+login query, we cache the result of each search made via this query for up to
+10 minutes (600 seconds) based on its ``cache_period`` argument.
 
 The ``login`` view is invoked when someone visits ``/login`` or when the user
 is prevented from invoking another view due to its permission settings.  It
