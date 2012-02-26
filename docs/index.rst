@@ -1,5 +1,5 @@
-pyramid_debugtoolbar
-====================
+pyramid_ldap
+============
 
 Overview
 --------
