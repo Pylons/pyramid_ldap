@@ -220,13 +220,14 @@ def get_ldap_connector(request):
             'to use an ldap connector')
     return connector
 
-def groupfinder(dn, request):
+def groupfinder(userdn, request):
     """ A groupfinder implementation useful in conjunction with
     out-of-the-box Pyramid authentication policies.  It returns the DN of
-    each group belonging to the user specified by ``dn`` to as a principal in
-    the list of results; if the user does not exist, it returns None."""
+    each group belonging to the user specified by ``userdn`` to as a
+    principal in the list of results; if the user does not exist, it returns
+    None."""
     connector = get_ldap_connector(request)
-    group_list = connector.user_groups(dn)
+    group_list = connector.user_groups(userdn)
     if group_list is None:
         return None
     group_dns = []
