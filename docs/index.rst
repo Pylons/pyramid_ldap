@@ -110,6 +110,14 @@ Usage
 See the ``sampleapp`` sample application in this package for usage
 information.
 
+XXX need much more.
+
+Logging
+-------
+
+``pyramid_ldap`` uses the logger named ``pyramid_ldap``.  It sends output at
+a DEBUG level useful for its own developers to see what's happening.
+
 More Information
 ----------------
 
