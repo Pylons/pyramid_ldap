@@ -116,11 +116,11 @@ class Test_ldap_set_groups_query(unittest.TestCase):
         import ldap
         config = DummyConfig()
         self._callFUT(config, 'dn', 'tmpl')
-        self.assertEqual(config.registry.ldap_groups_search.base_dn, 'dn')
-        self.assertEqual(config.registry.ldap_groups_search.filter_tmpl, 'tmpl')
-        self.assertEqual(config.registry.ldap_groups_search.scope,
+        self.assertEqual(config.registry.ldap_groups_query.base_dn, 'dn')
+        self.assertEqual(config.registry.ldap_groups_query.filter_tmpl, 'tmpl')
+        self.assertEqual(config.registry.ldap_groups_query.scope,
                          ldap.SCOPE_SUBTREE)
-        self.assertEqual(config.registry.ldap_groups_search.cache_period, 0)
+        self.assertEqual(config.registry.ldap_groups_query.cache_period, 0)
 
 class Test_ldap_set_login_query(unittest.TestCase):
     def _callFUT(self, config, base_dn, filter_tmpl, **kw):
@@ -131,18 +131,18 @@ class Test_ldap_set_login_query(unittest.TestCase):
         import ldap
         config = DummyConfig()
         self._callFUT(config, 'dn', 'tmpl')
-        self.assertEqual(config.registry.ldap_login_search.base_dn, 'dn')
-        self.assertEqual(config.registry.ldap_login_search.filter_tmpl, 'tmpl')
-        self.assertEqual(config.registry.ldap_login_search.scope,
+        self.assertEqual(config.registry.ldap_login_query.base_dn, 'dn')
+        self.assertEqual(config.registry.ldap_login_query.filter_tmpl, 'tmpl')
+        self.assertEqual(config.registry.ldap_login_query.scope,
                          ldap.SCOPE_ONELEVEL)
-        self.assertEqual(config.registry.ldap_login_search.cache_period, 0)
+        self.assertEqual(config.registry.ldap_login_query.cache_period, 0)
 
 class TestConnector(unittest.TestCase):
     def _makeOne(self, registry, manager):
         from pyramid_ldap import Connector
         return Connector(registry, manager)
 
-    def test_authenticate_no_ldap_login_search(self):
+    def test_authenticate_no_ldap_login_query(self):
         manager = DummyManager()
         inst = self._makeOne(None, manager)
         self.assertRaises(ConfigurationError, inst.authenticate, None, None)
@@ -150,14 +150,14 @@ class TestConnector(unittest.TestCase):
     def test_authenticate_search_returns_non_one_result(self):
         manager = DummyManager()
         registry = Dummy()
-        registry.ldap_login_search = DummySearch([])
+        registry.ldap_login_query = DummySearch([])
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.authenticate(None, None), None)
 
     def test_authenticate_search_returns_one_result(self):
         manager = DummyManager()
         registry = Dummy()
-        registry.ldap_login_search = DummySearch([('a', 'b')])
+        registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.authenticate(None, None), ('a', 'b'))
 
@@ -165,11 +165,11 @@ class TestConnector(unittest.TestCase):
         import ldap
         manager = DummyManager([None, ldap.LDAPError])
         registry = Dummy()
-        registry.ldap_login_search = DummySearch([('a', 'b')])
+        registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.authenticate(None, None), None)
 
-    def test_user_groups_no_ldap_groups_search(self):
+    def test_user_groups_no_ldap_groups_query(self):
         manager = DummyManager()
         inst = self._makeOne(None, manager)
         self.assertRaises(ConfigurationError, inst.user_groups, None)
@@ -177,7 +177,7 @@ class TestConnector(unittest.TestCase):
     def test_user_groups_search_returns_result(self):
         manager = DummyManager()
         registry = Dummy()
-        registry.ldap_groups_search = DummySearch([('a', 'b')])
+        registry.ldap_groups_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.user_groups(None), [('a', 'b')])
 
@@ -185,7 +185,7 @@ class TestConnector(unittest.TestCase):
         import ldap
         manager = DummyManager()
         registry = Dummy()
-        registry.ldap_groups_search = DummySearch([('a', 'b')], ldap.LDAPError)
+        registry.ldap_groups_query = DummySearch([('a', 'b')], ldap.LDAPError)
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.user_groups(None), None)
 
@@ -252,6 +252,9 @@ class DummyConfig(object):
         self.prop_reify = reify
         self.prop_name = name
         self.prop = prop
+
+    def action(self, discriminator, callable):
+        callable()
     
 class DummyManager(object):
     def __init__(self, with_errors=()):

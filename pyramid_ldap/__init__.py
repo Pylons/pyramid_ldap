@@ -89,7 +89,7 @@ class Connector(object):
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`."""
         with self.manager.connection() as conn:
-            search = getattr(self.registry, 'ldap_login_search', None)
+            search = getattr(self.registry, 'ldap_login_query', None)
             if search is None:
                 raise ConfigurationError(
                     'ldap_set_login_query was not called during setup')
@@ -125,10 +125,10 @@ class Connector(object):
         :exc:`pyramid.exceptions.ConfiguratorError`
         """
         with self.manager.connection() as conn:
-            search = getattr(self.registry, 'ldap_groups_search', None)
+            search = getattr(self.registry, 'ldap_groups_query', None)
             if search is None:
                 raise ConfigurationError(
-                    'set_ldap_groups_search was not called during setup')
+                    'set_ldap_groups_query was not called during setup')
             try:
                 result = search.execute(conn, userdn=userdn)
                 return _ldap_decode(result)
@@ -150,7 +150,7 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
 
     Example::
 
-        config.set_ldap_login_search(
+        config.set_ldap_login_query(
             base_dn='CN=Users,DC=example,DC=com',
             filter_tmpl='(sAMAccountName=%(login)s)',
             scope=ldap.SCOPE_ONELEVEL,
@@ -159,8 +159,10 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
     The registered search must return one and only one value to be considered
     a valid login.
     """
-    config.registry.ldap_login_search = _LDAPQuery(
-        base_dn, filter_tmpl, scope, cache_period)
+    def register():
+        config.registry.ldap_login_query = _LDAPQuery(
+            base_dn, filter_tmpl, scope, cache_period)
+    config.action('ldap-set-login-query', register)
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
                            scope=ldap.SCOPE_SUBTREE, cache_period=0):
@@ -174,15 +176,17 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
 
     Example::
 
-        config.set_ldap_groups_search(
+        config.set_ldap_groups_query(
             base_dn='CN=Users,DC=example,DC=com',
             filter_tmpl='(&(objectCategory=group)(member=%(userdn)s))'
             scope=ldap.SCOPE_SUBTREE,
             )
 
     """
-    config.registry.ldap_groups_search = _LDAPQuery(
-        base_dn, filter_tmpl, scope, cache_period)
+    def register():
+        config.registry.ldap_groups_query = _LDAPQuery(
+            base_dn, filter_tmpl, scope, cache_period)
+    config.action('ldap-set-groups-query', register)
 
 def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
                retry_delay=.1, use_tls=False, timeout=-1, use_pool=True):
@@ -209,7 +213,9 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     def get_connector(request):
         registry = request.registry
         return Connector(registry, manager)
-    config.set_request_property(get_connector, 'ldap_connector', reify=True)
+    def register():
+        config.set_request_property(get_connector, 'ldap_connector', reify=True)
+    config.action('ldap-setup', register)
 
 def get_ldap_connector(request):
     """ Return the LDAP connector attached to the request.  If
