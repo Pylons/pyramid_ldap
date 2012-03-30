@@ -6,7 +6,13 @@ import time
 from pyramid.exceptions import ConfigurationError
 from pyramid.compat import bytes_
 
-from ldappool import ConnectionManager
+try:
+    from ldappool import ConnectionManager
+except ImportError as e: # pragma: no cover
+    class ConnectionManager(object):
+        def __init__(self, *arg, **kw):
+            # this is for benefit of being able to build the docs on rtd.org
+            raise e
 
 logger = logging.getLogger(__name__)
 
