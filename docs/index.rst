@@ -13,7 +13,7 @@ application.  Thanks to the ever-awesome `SurveyMonkey
 Installation
 ------------
 
-``pyramid_ldap`` depends on the `python-ldap <http://www.python-ldap.org/>`
+``pyramid_ldap`` depends on the `python-ldap <http://www.python-ldap.org/>`_
 and `ldappool <https://github.com/mozilla-services/ldappool>`_ packages.
 ``python_ldap`` requires OpenLDAP development libraries to be installed
 before it can successfully be installed.  An easy way to get these installed
