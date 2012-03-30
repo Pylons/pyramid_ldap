@@ -5,7 +5,8 @@ Overview
 --------
 
 :mod:`pyramid_ldap` provides LDAP authentication services to your Pyramid
-application.
+application.  Thanks to the ever-awesome `SurveyMonkey
+<http://surveymonkey.com>`_ for sponsoring the development of this package!
 
 .. warning:: This package only works with Pyramid 1.3a9 and better.
 
@@ -303,7 +304,8 @@ The ``logout`` view calls ``pyramid.security.forget`` to obtain headers
 useful for dropping the credentials.
 
 See the ``sampleapp`` sample application inside the ``pyramid_ldap``
-distribution for a working example of the above application.
+distribution for a working example of the above application.  It can be
+viewed at https://github.com/Pylons/pyramid_ldap/tree/master/sampleapp .
 
 Logging
 -------
