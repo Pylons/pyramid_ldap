@@ -1,4 +1,12 @@
-import ldap
+try:
+    import ldap
+except ImportError: # pragma: no cover
+    # this is for benefit of being able to build the docs on rtd.org
+    class ldap(object):
+        LDAPError = Exception
+        SCOPE_ONELEVEL = None
+        SCOPE_SUBTREE = None
+        
 import logging
 import pprint
 import time
