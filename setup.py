@@ -8,9 +8,10 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'pyramid>=1.3a9',
-    'ldappool',
-    'python-ldap',
     ]
+if not 'READTHEDOCS' in os.environ:
+    # hail mary for readthedocs
+    requires.extend(['ldappool', 'python-ldap'])
 
 sampleapp_extras = [
     'waitress',
