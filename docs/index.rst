@@ -71,7 +71,7 @@ attempts to talk to an Active Directory server:
 
     config.ldap_set_groups_query(
         base_dn='CN=Users,DC=example,DC=com',
-        filter_tmpl='(&(objectCategory=group)(member=%(dn)s))',
+        filter_tmpl='(&(objectCategory=group)(member=%(userdn)s))',
         scope = ldap.SCOPE_SUBTREE,
         cache_period = 600,
         )
@@ -224,7 +224,7 @@ Here's a small application which uses the ``pyramid_ldap`` API:
 
         config.ldap_set_groups_query(
             base_dn='CN=Users,DC=example,DC=com',
-            filter_tmpl='(&(objectCategory=group)(member=%(dn)s))',
+            filter_tmpl='(&(objectCategory=group)(member=%(userdn)s))',
             scope = ldap.SCOPE_SUBTREE,
             cache_period = 600,
             )
@@ -250,8 +250,8 @@ parameter (aka the "windows login name").
 The application also sets up a groups query using
 :func:`pyramid_ldap.ldap_set_groups_query` using a base DN of
 ``CN=Users,DC=example,DC=com`` and a filter_tmpl of
-``(&(objectCategory=group)(member=%(dn)s))``.  The group query's filter
-template's ``%(dn)s`` value will be replaced with the DN of the user provided
+``(&(objectCategory=group)(member=%(userdn)s))``.  The group query's filter
+template's ``%(userdn)s`` value will be replaced with the DN of the user provided
 as the userid by the :meth:`pyramid_ldap.Connector.user_groups` method, in
 order to look up all the groups to which the user belongs.  In this case,
 we're using the ``member`` attribute to match against the DN, returning all
