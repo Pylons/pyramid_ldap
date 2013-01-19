@@ -8,6 +8,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'pyramid>=1.3a9',
+    'colander>=1.0a1'
     ]
 if not 'READTHEDOCS' in os.environ:
     # hail mary for readthedocs

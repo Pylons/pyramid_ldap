@@ -1,0 +1,9 @@
+<html>
+<head>
+<title>OK: User ${dn} logged in</title>
+</head>
+<body>
+<h1>User ${dn} logged in</h1>
+  <a href="${request.route_url('sampleapp.logout')}">logout</a>
+</body>
+</html>

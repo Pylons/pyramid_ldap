@@ -15,6 +15,8 @@ from string import Template
 from pyramid.exceptions import ConfigurationError
 from pyramid.compat import bytes_
 
+from .validators import ConnectionData, QueryData, null
+
 try:
     from ldappool import ConnectionManager
 except ImportError as e: # pragma: no cover
@@ -338,6 +340,78 @@ def groupfinder(userdn, request):
         group_dns.append(dn)
     return group_dns
 
+def _ldap_setup_connection_from_settings(config):
+    """ Setup a a LDAP connection pool by calling the relative
+    config callable with parameters already defined in the global config.
+    """
+    basepath = 'pyramid_ldap.connection'
+    path_tpl = '{0}.{{parm}}'.format(basepath)
+    settings = config.registry.settings
+
+    parm_names = ['uri', 'bind', 'passwd', 'pool_size', 'retry_max'
+                  'retry_delay', 'use_tls', 'timeout', 'use_pool',
+                 ]
+
+    _parms = {}
+
+    data_extractor = ConnectionData()
+
+    for key in parm_names:
+        _parms[key] = settings.get(path_tpl.format(parm=key), null)
+
+    try:
+        data = data_extractor.deserialize(_parms)
+        logger.debug('data=%r' % data)
+        uri = data.pop('uri')
+        ldap_setup(config, uri, **data)
+    except Exception as exc:
+        logger.debug(exc)
+        logger.info("Couldn't configure %s from "
+                    "inherited settings" % basepath)
+
+def _ldap_set_query_from_settings(config, query_setter,
+                                  basepath=''):
+    """ Setup a ldap query by calling the relative config callable
+    with parameters already defined in the global config.
+    """
+
+    settings = config.registry.settings
+
+    path_tpl = '{0}.{{parm}}'.format(basepath)
+    parm_names = ['filter_tmpl', 'scope', 'cache_period', 'search_after_bind']
+    _parms = {}
+
+    data_extractor = QueryData()
+
+    for key in parm_names:
+        _parms[key] = settings.get(path_tpl.format(parm=key))
+
+    base_dn = settings.get(path_tpl.format(parm='base_dn'), '').strip()
+
+    try:
+        data = data_extractor.deserialize(_parms)
+        logger.debug('base_dn=%r, data=%r' % (base_dn, data))
+        query_setter(config, base_dn, **data)
+    except Exception as exc:
+        logger.info("Couldn't configure %s from "
+                    "inherited settings." % basepath)
+        logger.debug(exc)
+
+def ldap_setup_from_settings(config):
+    """ Setup LDAP related parameters via settings found in global
+    configuration, e.g. already defined via a paster .ini file.
+
+    The global settings searched key names follow the pattern 
+    **<prefix>.<param_name>** with prefix being one of
+
+        - pyramid_ldap.connection (see :func:`ldap_setup`)
+        - pyramid_ldap.login (see :func:`ldap_set_login_query`)
+        - pyramid_ldap.groups (see :func:`ldap_set_groups_query`)
+    """
+    _ldap_setup_connection_from_settings(config)
+    _ldap_set_query_from_settings(config, ldap_set_login_query, 'pyramid_ldap.login')
+    _ldap_set_query_from_settings(config, ldap_set_groups_query, 'pyramid_ldap.groups')
+
 def _ldap_decode(result):
     """ Decode (recursively) strings in the result data structure to Unicode
     using the utf-8 encoding """
@@ -391,4 +465,7 @@ def includeme(config):
     config.add_directive('ldap_setup', ldap_setup)
     config.add_directive('ldap_set_login_query', ldap_set_login_query)
     config.add_directive('ldap_set_groups_query', ldap_set_groups_query)
+
+    if 'pyramid_ldap' in config.registry.settings['pyramid.includes']:
+        ldap_setup_from_settings(config)
 
