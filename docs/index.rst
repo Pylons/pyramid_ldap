@@ -65,16 +65,51 @@ attempts to talk to an Active Directory server:
 
     config.ldap_set_login_query(
         base_dn='CN=Users,DC=example,DC=com',
-        filter_tmpl='(sAMAccountName=%(login)s)',
+        filter_tmpl='(sAMAccountName=${login})',
         scope = ldap.SCOPE_ONELEVEL,
         )
 
     config.ldap_set_groups_query(
         base_dn='CN=Users,DC=example,DC=com',
-        filter_tmpl='(&(objectCategory=group)(member=%(userdn)s))',
+        filter_tmpl='(&(objectCategory=group)(member=${userdn}))',
         scope = ldap.SCOPE_SUBTREE,
         cache_period = 600,
         )
+
+Alternately, instead of using the Configurator's ``ldap_set*`` methods, you can
+configure the ldap connection declaring the parameters in your application's
+``.ini`` file.
+
+The same configuration described above could be implemented by inserting the
+following lines your application's ``.ini``:
+
+.. code-block:: ini
+
+    pyramid.includes = pyramid_ldap
+
+    pyramid_ldap.connection.uri = ldap://ldap.example.com
+    pyramid_ldap.connection.bind = 'CN=ldap user,CN=Users,DC=example,DC=com'
+    pyramid_ldap.connection.password = 'ld@pu5er'
+
+    pyramid_ldap.login.base_dn = CN=Users,DC=example,DC=com
+    pyramid_ldap.login.filter_tmpl = (sAMAccountName=${login})
+    pyramid_ldap.login.scope = ldap.SCOPE_ONELEVEL
+
+    pyramid_ldap.groups.base_dn = CN=Users,DC=example,DC=com
+    pyramid_ldap.groups.filter_tmpl = (&(objectCategory=group)(member=${userdn}))
+    pyramid_ldap.groups.cache_period = 600
+
+where the configuration file setting names correspond the ones used in the
+call signature of imperative configuration methods, prefixed by:
+
+  ==============================   ========================   
+  Configurator object method       Configuration file key     
+  ==============================   ========================   
+  config.ldap_setup                pyramid_ldap.connection.   
+  config.ldap_set_login_query      pyramid_ldap.login.        
+  config.ldap_set_groups_query     pyramid_ldap.groups.       
+  ==============================   ========================   
+
 
 Configurator Methods
 --------------------
@@ -306,6 +341,42 @@ useful for dropping the credentials.
 See the ``sampleapp`` sample application inside the ``pyramid_ldap``
 distribution for a working example of the above application.  It can be
 viewed at https://github.com/Pylons/pyramid_ldap/tree/master/sampleapp .
+
+If you instead choose to configure the application declaratively from
+the config file, the ``if __name__ == '__main__':`` section of the
+application would get a bit shorter:
+
+.. code-block:: python
+
+    import ldap
+
+    # SNIPPED module level code;
+    # imports and @view_config definitions
+
+    class RootFactory(object):
+        __acl__ = [(Allow, Authenticated, 'view')]
+        def __init__(self, request):
+            pass
+
+    if __name__ == '__main__':
+        config = Configurator(root_factory=RootFactory)
+
+        config.set_authentication_policy(
+            AuthTktAuthenticationPolicy('seekr1t',
+                                        callback=groupfinder)
+            )
+        config.set_authorization_policy(
+            ACLAuthorizationPolicy()
+            )
+
+        # ldap connection and query setup have already been 
+        # enabled by the PasteDeploy machinery
+
+        config.add_route('root', '/')
+        config.add_route('login', '/login')
+        config.add_route('logout', '/logout')
+        config.scan('.')
+        return config.make_wsgi_app()
 
 Logging
 -------
