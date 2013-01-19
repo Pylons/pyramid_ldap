@@ -25,12 +25,12 @@ def main(global_config, **settings):
         passwd='ld@pu5er')
     config.ldap_set_login_query(
         'CN=Users,DC=example,DC=com',
-        '(sAMAccountName=%(login)s)',
+        '(sAMAccountName=${login})',
         cache_period=0,
         )
     config.ldap_set_groups_query(
         'CN=Users,DC=example,DC=com',
-        '(member:1.2.840.113556.1.4.1941:=%(userdn)s)',
+        '(member:1.2.840.113556.1.4.1941:=${userdn})',
         #'(&(objectCategory=group)(member=%(dn)s))',
         cache_period=60,
         )
