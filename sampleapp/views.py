@@ -3,18 +3,21 @@ import pprint
 from pyramid.view import view_config, forbidden_view_config
 from pyramid.response import Response
 from pyramid.httpexceptions import HTTPFound
-from pyramid.security import remember, forget
+from pyramid.security import remember, forget, authenticated_userid, unauthenticated_userid
 
 from pyramid_ldap import get_ldap_connector
 
-@view_config(route_name='sampleapp.root', permission='view')
+@view_config(route_name='sampleapp.root', permission='view', renderer='templates/root.pt')
 def logged_in(request):
-    return Response('OK')
+    return dict(dn=authenticated_userid(request))
 
 @view_config(route_name='sampleapp.logout')
 def logout(request):
     headers = forget(request)
-    return Response('Logged out', headers=headers)
+    return HTTPFound('/', headers=headers)
+    # # We could as well keep the user in a clean logged out page
+    # # by doing 
+    # return Response('Logged out', headers=headers)
 
 @view_config(route_name='sampleapp.login', renderer='templates/login.pt')
 @forbidden_view_config(renderer='templates/login.pt')

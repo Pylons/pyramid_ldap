@@ -8,6 +8,7 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'pyramid>=1.3a9',
+    'colander>=1.0a1'
     ]
 if not 'READTHEDOCS' in os.environ:
     # hail mary for readthedocs
@@ -21,7 +22,7 @@ testing_extras = ['nose', 'coverage']
 docs_extras = ['Sphinx']
 
 setup(name='pyramid_ldap',
-      version='0.1',
+      version='0.2.dev1',
       description='pyramid_ldap',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
