@@ -113,13 +113,13 @@ class Connector(object):
             raise ConfigurationError(
                 'ldap_set_login_query was not called during setup')
         
-        with self.manager.connection() as conn:
-            result = search.execute(conn, login=login, password=password)
-            if len(result) == 1:
-                login_dn = result[0][0]
-            else:
-                return None
         try:
+            with self.manager.connection() as conn:
+                result = search.execute(conn, login=login, password=password)
+                if len(result) == 1:
+                    login_dn = result[0][0]
+                else:
+                    return None
             with self.manager.connection(login_dn, password) as conn:
                 # must invoke the __enter__ of this thing for it to connect
                 return _ldap_decode(result[0])
