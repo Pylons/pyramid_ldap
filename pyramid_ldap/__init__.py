@@ -108,12 +108,12 @@ class Connector(object):
         If :meth:`pyramid.config.Configurator.ldap_set_login_query` was not
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`."""
+        search = getattr(self.registry, 'ldap_login_query', None)
+        if search is None:
+            raise ConfigurationError(
+                'ldap_set_login_query was not called during setup')
+        
         with self.manager.connection() as conn:
-            search = getattr(self.registry, 'ldap_login_query', None)
-            if search is None:
-                raise ConfigurationError(
-                    'ldap_set_login_query was not called during setup')
-            
             result = search.execute(conn, login=login, password=password)
             if len(result) == 1:
                 login_dn = result[0][0]
@@ -144,11 +144,11 @@ class Connector(object):
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`
         """
+        search = getattr(self.registry, 'ldap_groups_query', None)
+        if search is None:
+            raise ConfigurationError(
+                'set_ldap_groups_query was not called during setup')
         with self.manager.connection() as conn:
-            search = getattr(self.registry, 'ldap_groups_query', None)
-            if search is None:
-                raise ConfigurationError(
-                    'set_ldap_groups_query was not called during setup')
             try:
                 result = search.execute(conn, userdn=userdn)
                 return _ldap_decode(result)
