@@ -140,6 +140,10 @@ class Connector(object):
                     return None
             with self.manager.connection(login_dn, password) as conn:
                 # must invoke the __enter__ of this thing for it to connect
+                if search.search_after_bind:
+                    result = search.execute_cache(conn, login_dn,
+                                                   ldap.SCOPE_BASE,
+                                                   '(objectClass=*)')
                 return _ldap_decode(result[0])
         except (ldap.LDAPError, ldap.SIZELIMIT_EXCEEDED, ldap.INVALID_CREDENTIALS):
             logger.debug('Exception in authenticate with login %r - - ' % login,
@@ -181,14 +185,23 @@ class Connector(object):
                 return None
 
 def ldap_set_login_query(config, base_dn, filter_tmpl, 
-                          scope=ldap.SCOPE_ONELEVEL, cache_period=0):
-    """ Configurator method to set the LDAP login search.  ``base_dn`` is the
-    DN at which to begin the search.  ``filter_tmpl`` is a string which can
-    be used as an LDAP filter: it should contain the replacement value
-    ``%(login)s``.  Scope is any valid LDAP scope value
-    (e.g. ``ldap.SCOPE_ONELEVEL``).  ``cache_period`` is the number of seconds
-    to cache login search results; if it is 0, login search results will not
-    be cached.
+                          scope=ldap.SCOPE_ONELEVEL, cache_period=0,
+                          search_after_bind=False):
+    """ Configurator method to set the LDAP login search.
+
+    - **base_dn**: the DN at which to begin the search **[mandatory]**
+    - **filter_tmpl**: an LDAP search filter **[mandatory]**
+
+    At least one of these parameters should contain the replacement value
+    ``%(login)s``
+
+    - **scope**: A valid ldap search scope
+      **default**: ``ldap.SCOPE_ONELEVEL``
+    - **cache_period**: the number of seconds to cache login search results
+      if 0, results will not be cached
+      **default**: ``0``
+    - **search_after_bind**: do a base search on the entry itself after
+      a successful bind
 
     Example::
 
@@ -200,8 +213,28 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
 
     The registered search must return one and only one value to be considered
     a valid login.
+
+    If the ``filter_tmpl`` is empty, the directory will not be searched, and
+    the entry dn will be assumed to be equal to the ``%(login)s``-replaced
+    ``base_dn``, and no entry's attribute will be fetched from the LDAP server,
+    leading to faster operation.
+    Both in this case, and in the case of servers configured to only allow
+    reading some needed entry's attribute only to the bound entry itself,
+    ``search_after_bind`` can be set to ``True`` if there is a need to read
+    the entry's attribute.
+
+    Example::
+
+        config.set_ldap_login_query(
+            base_dn='sAMAccountName=%(login)s,CN=Users,DC=example,DC=com',
+            filter_tmpl=''
+            scope=ldap.SCOPE_ONELEVEL,
+            search_after_bind=True
+            )
+
     """
-    query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
+    query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period,
+                        search_after_bind=search_after_bind)
     def register():
         config.registry.ldap_login_query = query
 
@@ -216,13 +249,16 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
                            scope=ldap.SCOPE_SUBTREE, cache_period=0):
-    """ Configurator method to set the LDAP groups search.  ``base_dn`` is
-    the DN at which to begin the search.  ``filter_tmpl`` is a string which
-    can be used as an LDAP filter: it should contain the replacement value
-    ``%(userdn)s``.  Scope is any valid LDAP scope value
-    (e.g. ``ldap.SCOPE_SUBTREE``).  ``cache_period`` is the number of seconds
-    to cache groups search results; if it is 0, groups search results will
-    not be cached.
+    """ Configurator method to set the LDAP groups search.
+
+    - **base_dn**: the DN at which to begin the search **[mandatory]**
+    - **filter_tmpl**: a string which can be used as an LDAP filter:
+      it should contain the replacement value ``%(userdn)s`` **[mandatory]**
+    - **scope**: A valid ldap search scope
+      **default**: ``ldap.SCOPE_SUBTREE``
+    - **cache_period**: the number of seconds to cache login search results
+      if 0, results will not be cached
+      **default**: ``0``
 
     Example::
 
