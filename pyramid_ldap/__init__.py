@@ -1,5 +1,6 @@
 try:
     import ldap
+    import ldap.filter
 except ImportError: # pragma: no cover
     # this is for benefit of being able to build the docs on rtd.org
     class ldap(object):
@@ -132,8 +133,10 @@ class Connector(object):
                 'ldap_set_login_query was not called during setup')
         
         try:
+            login = login or ''
+            escaped_login = ldap.filter.escape_filter_chars(login)
             with self.manager.connection() as conn:
-                result = search.execute(conn, login=login, password=password, sizelimit=1)
+                result = search.execute(conn, login=escaped_login, password=password, sizelimit=1)
                 if len(result) == 1:
                     login_dn = result[0][0]
                 else:
