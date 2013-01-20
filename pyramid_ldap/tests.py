@@ -289,3 +289,10 @@ class DummyConnection(object):
         self.arg = arg
         return self.result
     
+    def search_ext_s(self, *arg, **kw):
+        import ldap
+        sizelimit = kw.get('sizelimit', 0)
+        self.arg = arg
+        if sizelimit and len(self.result) > sizelimit:
+            raise ldap.SIZELIMIT_EXCEEDED
+        return self.result

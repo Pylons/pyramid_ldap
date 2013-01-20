@@ -15,7 +15,7 @@ from pyramid.exceptions import ConfigurationError
 from pyramid.compat import bytes_
 
 try:
-    from ldappool import ConnectionManager
+    from ldappool import ConnectionManager, BackendError
 except ImportError as e: # pragma: no cover
     class ConnectionManager(object):
         def __init__(self, *arg, **kw):
@@ -27,17 +27,20 @@ logger = logging.getLogger(__name__)
 class _LDAPQuery(object):
     """ Represents an LDAP query.  Provides rudimentary in-RAM caching of
     query results."""
-    def __init__(self, base_dn, filter_tmpl, scope, cache_period):
+    def __init__(self, base_dn, filter_tmpl, scope, cache_period,
+                  search_after_bind=False):
         self.base_dn = base_dn
         self.filter_tmpl = filter_tmpl
         self.scope = scope
         self.cache_period = cache_period
         self.last_timeslice = 0
         self.cache = {}
+        self.search_after_bind = search_after_bind
 
     def __str__(self):
         return ('base_dn=%(base_dn)s, filter_tmpl=%(filter_tmpl)s, '
-                'scope=%(scope)s, cache_period=%(cache_period)s' % 
+                'scope=%(scope)s, cache_period=%(cache_period)s '
+                'search_after_bind=%(search_after_bind)s'%
                 self.__dict__)
 
     def query_cache(self, cache_key):
@@ -57,7 +60,7 @@ class _LDAPQuery(object):
 
         return result
 
-    def execute(self, conn, **kw):
+    def execute(self, conn, sizelimit=0, **kw):
         cache_key = (
             bytes_(self.base_dn % kw, 'utf-8'), 
             self.scope,
@@ -73,10 +76,10 @@ class _LDAPQuery(object):
                              (cache_key,)
                              )
             else:
-                result = conn.search_s(*cache_key)
+                result = conn.search_ext_s(*cache_key, sizelimit=sizelimit)
                 self.cache[cache_key] = result
         else:
-            result = conn.search_s(*cache_key)
+            result = conn.search_ext_s(*cache_key, sizelimit=sizelimit)
 
         logger.debug('search result: %r' % (result,))
 
@@ -115,7 +118,7 @@ class Connector(object):
         
         try:
             with self.manager.connection() as conn:
-                result = search.execute(conn, login=login, password=password)
+                result = search.execute(conn, login=login, password=password, sizelimit=1)
                 if len(result) == 1:
                     login_dn = result[0][0]
                 else:
@@ -123,7 +126,11 @@ class Connector(object):
             with self.manager.connection(login_dn, password) as conn:
                 # must invoke the __enter__ of this thing for it to connect
                 return _ldap_decode(result[0])
-        except ldap.LDAPError:
+        except (ldap.LDAPError, ldap.SIZELIMIT_EXCEEDED, ldap.INVALID_CREDENTIALS):
+            logger.debug('Exception in authenticate with login %r - - ' % login,
+                         exc_info=True)
+            return None
+        except BackendError:
             logger.debug('Exception in authenticate with login %r' % login,
                          exc_info=True)
             return None
