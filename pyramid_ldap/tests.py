@@ -271,9 +271,10 @@ class DummyManager(object):
                 raise e
         
 class DummySearch(object):
-    def __init__(self, result, exc=None):
+    def __init__(self, result, exc=None, search_after_bind=False):
         self.result = result
         self.exc = exc
+        self.search_after_bind = search_after_bind
 
     def execute(self, conn, **kw):
         if self.exc is not None:
@@ -289,3 +290,10 @@ class DummyConnection(object):
         self.arg = arg
         return self.result
     
+    def search_ext_s(self, *arg, **kw):
+        import ldap
+        sizelimit = kw.get('sizelimit', 0)
+        self.arg = arg
+        if sizelimit and len(self.result) > sizelimit:
+            raise ldap.SIZELIMIT_EXCEEDED
+        return self.result
