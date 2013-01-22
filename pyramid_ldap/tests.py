@@ -137,6 +137,72 @@ class Test_ldap_set_login_query(unittest.TestCase):
                          ldap.SCOPE_ONELEVEL)
         self.assertEqual(config.registry.ldap_login_query.cache_period, 0)
 
+class Test_get_ldap_connector_w_context(unittest.TestCase):
+    named_context = 'CONTEXT'
+    def _callFUT(self, request):
+        from pyramid_ldap import get_ldap_connector
+        return get_ldap_connector(request, context=self.named_context)
+
+    def test_no_connector(self):
+        request = testing.DummyRequest()
+        self.assertRaises(ConfigurationError, self._callFUT, request)
+        
+    def test_with_connector(self):
+        request = testing.DummyRequest()
+        setattr(request, 'ldap_connector_%s' % self.named_context, True)
+        result = self._callFUT(request)
+        self.assertEqual(result, True)
+
+class Test_ldap_setup_w_context(unittest.TestCase):
+    named_context = 'CONTEXT'
+    def _callFUT(self, config, uri, **kw):
+        from pyramid_ldap import ldap_setup
+        return ldap_setup(config, uri, context=self.named_context, **kw)
+
+    def test_it_defaults(self):
+        from pyramid_ldap import Connector
+        config = DummyConfig()
+        self._callFUT(config, 'ldap://')
+        self.assertEqual(config.prop_name, 'ldap_connector_%s' % self.named_context)
+        self.assertEqual(config.prop_reify, True)
+        request = testing.DummyRequest()
+        self.assertEqual(config.prop(request).__class__, Connector)
+
+class Test_ldap_set_groups_query_w_context(unittest.TestCase):
+    named_context = 'CONTEXT'
+    def _callFUT(self, config, base_dn, filter_tmpl, **kw):
+        from pyramid_ldap import ldap_set_groups_query
+        return ldap_set_groups_query(config, base_dn, filter_tmpl, context=self.named_context, **kw)
+
+    def test_it_defaults(self):
+        import ldap
+        config = DummyConfig()
+        self._callFUT(config, 'dn', 'tmpl')
+        qry = getattr(config.registry, 'ldap_groups_query_%s' % self.named_context)
+        self.assertRaises(AttributeError, lambda: config.registry.ldap_groups_query.base_dn)
+        self.assertEqual(qry.base_dn, 'dn')
+        self.assertEqual(qry.filter_tmpl, 'tmpl')
+        self.assertEqual(qry.scope,
+                         ldap.SCOPE_SUBTREE)
+        self.assertEqual(qry.cache_period, 0)
+
+class Test_ldap_set_login_query_w_context(unittest.TestCase):
+    named_context = 'CONTEXT'
+    def _callFUT(self, config, base_dn, filter_tmpl, **kw):
+        from pyramid_ldap import ldap_set_login_query
+        return ldap_set_login_query(config, base_dn, filter_tmpl, context=self.named_context, **kw)
+
+    def test_it_defaults(self):
+        import ldap
+        config = DummyConfig()
+        self._callFUT(config, 'dn', 'tmpl')
+        qry = getattr(config.registry, 'ldap_login_query_%s' % self.named_context)
+        self.assertEqual(qry.base_dn, 'dn')
+        self.assertEqual(qry.filter_tmpl, 'tmpl')
+        self.assertEqual(qry.scope,
+                         ldap.SCOPE_ONELEVEL)
+        self.assertEqual(qry.cache_period, 0)
+
 class TestConnector(unittest.TestCase):
     def _makeOne(self, registry, manager):
         from pyramid_ldap import Connector

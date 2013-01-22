@@ -106,11 +106,26 @@ def _timeslice(period, when=None):
         when =  time.time()
     return when - (when % period)
     
+def _activity_identifier(base_identifier, context=''):
+    if context:
+        return '-'.join((base_identifier, context))
+    else:
+        return base_identifier
+
+def _registry_identifier(base_identifier, context=''):
+    if context:
+        return '_'.join((base_identifier, context))
+    else:
+        return base_identifier
+
 class Connector(object):
     """ Provides API methods for accessing LDAP authentication information."""
-    def __init__(self, registry, manager):
+    def __init__(self, registry, manager, context=''):
         self.registry = registry
         self.manager = manager
+        self.context = context
+        self.login_qry_identif = _registry_identifier('ldap_login_query', context)
+        self.group_qry_identif = _registry_identifier('ldap_groups_query', context)
 
     def authenticate(self, login, password):
         """ Given a login name and a password, return a tuple of ``(dn,
@@ -127,7 +142,7 @@ class Connector(object):
         If :meth:`pyramid.config.Configurator.ldap_set_login_query` was not
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`."""
-        search = getattr(self.registry, 'ldap_login_query', None)
+        search = getattr(self.registry, self.login_qry_identif, None)
         if search is None:
             raise ConfigurationError(
                 'ldap_set_login_query was not called during setup')
@@ -173,7 +188,7 @@ class Connector(object):
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`
         """
-        search = getattr(self.registry, 'ldap_groups_query', None)
+        search = getattr(self.registry, self.group_qry_identif, None)
         if search is None:
             raise ConfigurationError(
                 'set_ldap_groups_query was not called during setup')
@@ -189,7 +204,7 @@ class Connector(object):
 
 def ldap_set_login_query(config, base_dn, filter_tmpl, 
                           scope=ldap.SCOPE_ONELEVEL, cache_period=0,
-                          search_after_bind=False):
+                          search_after_bind=False, context=''):
     """ Configurator method to set the LDAP login search.
 
     - **base_dn**: the DN at which to begin the search **[mandatory]**
@@ -236,22 +251,26 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
             )
 
     """
+    query_identif = _registry_identifier('ldap_login_query', context)
+    intr_identif = _registry_identifier('pyramid_ldap', context)
+    act_identif = _activity_identifier('pyramid_ldap', context)
+
     query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period,
                         search_after_bind=search_after_bind)
     def register():
-        config.registry.ldap_login_query = query
+        setattr(config.registry, query_identif, query)
 
     intr = config.introspectable(
-        'pyramid_ldap login query',
+        '%s login query' % intr_identif,
         None,
         str(query),
-        'pyramid_ldap login query'
+        'login query'
         )
         
-    config.action('ldap-set-login-query', register, introspectables=(intr,))
+    config.action(act_identif, register, introspectables=(intr,))
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
-                           scope=ldap.SCOPE_SUBTREE, cache_period=0):
+                           scope=ldap.SCOPE_SUBTREE, cache_period=0, context=''):
     """ Configurator method to set the LDAP groups search.
 
     - **base_dn**: the DN at which to begin the search **[mandatory]**
@@ -272,19 +291,26 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
             )
 
     """
+    query_identif = _registry_identifier('ldap_groups_query', context)
+    intr_identif = _registry_identifier('pyramid_ldap', context)
+    act_identif = _activity_identifier('ldap-set-groups-query', context)
+
     query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
+
     def register():
-        config.registry.ldap_groups_query = query
+        setattr(config.registry, query_identif, query)
+
     intr = config.introspectable(
-        'pyramid_ldap groups query',
+        '%s groups query' % intr_identif,
         None,
         str(query),
-        'pyramid_ldap groups query'
+        '%s groups query' % intr_identif
         )
-    config.action('ldap-set-groups-query', register, introspectables=(intr,))
+
+    config.action(act_identif, register, introspectables=(intr,))
 
 def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
-               retry_delay=.1, use_tls=False, timeout=-1, use_pool=True):
+               retry_delay=.1, use_tls=False, timeout=-1, use_pool=True, context=''):
     """ Configurator method to set up an LDAP connection pool.
 
     - **uri**: ldap server uri **[mandatory]**
@@ -300,6 +326,10 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     - **use_pool**: activates the pool. If False, will recreate a connector
        each time. **default: True**
     """
+    conn_identif = _registry_identifier('ldap_connector', context)
+    intr_identif = _registry_identifier('pyramid_ldap', context)
+    act_identif = _activity_identifier('ldap-setup', context)
+
     vals = dict(
         uri=uri, bind=bind, passwd=passwd, size=pool_size, 
         retry_max=retry_max, retry_delay=retry_delay, use_tls=use_tls, 
@@ -310,23 +340,24 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
 
     def get_connector(request):
         registry = request.registry
-        return Connector(registry, manager)
+        return Connector(registry, manager, context)
 
-    config.set_request_property(get_connector, 'ldap_connector', reify=True)
+    config.set_request_property(get_connector, conn_identif, reify=True)
 
     intr = config.introspectable(
-        'pyramid_ldap setup',
+        '%s setup' % intr_identif,
         None,
         pprint.pformat(vals),
-        'pyramid_ldap setup'
+        '%s setup' % intr_identif,
         )
-    config.action('ldap-setup', None, introspectables=(intr,))
+    config.action(act_identif, None, introspectables=(intr,))
 
-def get_ldap_connector(request):
+def get_ldap_connector(request, context=''):
     """ Return the LDAP connector attached to the request.  If
     :meth:`pyramid.config.Configurator.ldap_setup` was not called, using
     this function will raise an :exc:`pyramid.exceptions.ConfigurationError`."""
-    connector = getattr(request, 'ldap_connector', None)
+    conn_name = _registry_identifier('ldap_connector', context)
+    connector = getattr(request, conn_name, None)
     if connector is None:
         raise ConfigurationError(
             'You must call Configurator.ldap_setup during setup '
