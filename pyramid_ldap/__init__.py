@@ -1,6 +1,7 @@
 try:
     import ldap
     import ldap.filter
+    import ldapurl
 except ImportError: # pragma: no cover
     # this is for benefit of being able to build the docs on rtd.org
     class ldap(object):
@@ -162,7 +163,7 @@ class Connector(object):
                     result = search.execute_cache(conn, login_dn,
                                                    ldap.SCOPE_BASE,
                                                    '(objectClass=*)')
-                return _ldap_decode(result[0])
+                return _ldap_tag_dn_decode(result, context=self.context)[0]
         except (ldap.LDAPError, ldap.SIZELIMIT_EXCEEDED, ldap.INVALID_CREDENTIALS):
             logger.debug('Exception in authenticate with login %r - - ' % login,
                          exc_info=True)
@@ -195,7 +196,7 @@ class Connector(object):
         with self.manager.connection() as conn:
             try:
                 result = search.execute(conn, userdn=userdn)
-                return _ldap_decode(result)
+                return _ldap_tag_dn_decode(result)
             except ldap.LDAPError:
                 logger.debug(
                     'Exception in user_groups with userdn %r' % userdn,
@@ -370,8 +371,9 @@ def groupfinder(userdn, request):
     each group belonging to the user specified by ``userdn`` to as a
     principal in the list of results; if the user does not exist, it returns
     None."""
-    connector = get_ldap_connector(request)
-    group_list = connector.user_groups(userdn)
+    parsed = ldapurl.LDAPUrl(userdn)
+    connector = get_ldap_connector(request, context=parsed.hostport)
+    group_list = connector.user_groups(parsed.dn)
     if group_list is None:
         return None
     group_dns = []
@@ -383,6 +385,13 @@ def _ldap_decode(result):
     """ Decode (recursively) strings in the result data structure to Unicode
     using the utf-8 encoding """
     return _Decoder().decode(result)
+
+def _ldap_tag_dn_decode(result, context=''):
+
+    return [('ldap://%s/%s' % (context, ldapurl.ldapUrlEscape(dn)),
+                                                               attributes)
+                   for dn, attributes in _ldap_decode(result)
+            ]
 
 class _Decoder(object):
     """
