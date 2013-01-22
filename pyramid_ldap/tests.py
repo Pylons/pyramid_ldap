@@ -69,13 +69,13 @@ class Test_groupfinder(unittest.TestCase):
     def test_no_group_list(self):
         request = testing.DummyRequest()
         request.ldap_connector = DummyLDAPConnector('dn', None)
-        result = self._callFUT('dn', request)
+        result = self._callFUT('ldap:///dn', request)
         self.assertEqual(result, None)
 
     def test_with_group_list(self):
         request = testing.DummyRequest()
         request.ldap_connector = DummyLDAPConnector('dn', [('groupdn', None)])
-        result = self._callFUT('dn', request)
+        result = self._callFUT('ldap:///dn', request)
         self.assertEqual(result, ['groupdn'])
 
 class Test_get_ldap_connector(unittest.TestCase):
@@ -225,7 +225,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), ('a', 'b'))
+        self.assertEqual(inst.authenticate(None, None), ('ldap:///a', 'b'))
 
     def test_authenticate_search_bind_raises(self):
         import ldap
@@ -245,7 +245,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_groups_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.user_groups(None), [('a', 'b')])
+        self.assertEqual(inst.user_groups(None), [('ldap:///a', 'b')])
 
     def test_user_groups_execute_raises(self):
         import ldap
