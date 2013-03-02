@@ -354,6 +354,8 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     config.action(act_identif, None, introspectables=(intr,))
 
 def get_ldap_connector_name(context=''):
+    """ Return the name of the connector attached to the request
+    for the named **context**."""
     return _registry_identifier('ldap_connector', context)
 
 def get_ldap_connector(request, context=''):
