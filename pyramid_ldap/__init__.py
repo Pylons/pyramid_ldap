@@ -353,11 +353,14 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
         )
     config.action(act_identif, None, introspectables=(intr,))
 
+def get_ldap_connector_name(context=''):
+    return _registry_identifier('ldap_connector', context)
+
 def get_ldap_connector(request, context=''):
     """ Return the LDAP connector attached to the request.  If
     :meth:`pyramid.config.Configurator.ldap_setup` was not called, using
     this function will raise an :exc:`pyramid.exceptions.ConfigurationError`."""
-    conn_name = _registry_identifier('ldap_connector', context)
+    conn_name = get_ldap_connector_name(context)
     connector = getattr(request, conn_name, None)
     if connector is None:
         raise ConfigurationError(
