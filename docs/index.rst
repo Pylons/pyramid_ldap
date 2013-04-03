@@ -290,10 +290,7 @@ you use this groupfinder.  The groupfinder uses the
         group_list = connector.user_groups(dn)
         if group_list is None:
             return None
-        group_dns = []
-        for dn, attrs in group_list:
-            group_dns.append(dn)
-        return group_dns
+        return [dn for dn, attrs in group_list]
 
 The effect of this configuration is that a user is unable to view the
 ``root`` view at ``/`` until logging in with successful credentials, because
