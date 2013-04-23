@@ -58,10 +58,12 @@ class _LDAPQuery(object):
         return result
 
     def execute(self, conn, **kw):
+        attrlist = kw.get('attrlist')
         cache_key = (
             bytes_(self.base_dn % kw, 'utf-8'), 
             self.scope,
-            bytes_(self.filter_tmpl % kw, 'utf-8')
+            bytes_(self.filter_tmpl % kw, 'utf-8'),
+            tuple(attrlist) if isinstance(attrlist, list) else attrlist,
             )
 
         logger.debug('searching for %r' % (cache_key,))
@@ -128,7 +130,7 @@ class Connector(object):
                          exc_info=True)
             return None
 
-    def user_groups(self, userdn):
+    def user_groups(self, userdn, attrlist=None):
         """ Given a user DN, return a sequence of LDAP attribute dictionaries
         matching the groups of which the DN is a member.  If the DN does not
         exist, return ``None``.
@@ -150,7 +152,7 @@ class Connector(object):
                 raise ConfigurationError(
                     'set_ldap_groups_query was not called during setup')
             try:
-                result = search.execute(conn, userdn=userdn)
+                result = search.execute(conn, userdn=userdn, attrlist=attrlist)
                 return _ldap_decode(result)
             except ldap.LDAPError:
                 logger.debug(
@@ -279,7 +281,7 @@ def groupfinder(userdn, request):
     principal in the list of results; if the user does not exist, it returns
     None."""
     connector = get_ldap_connector(request)
-    group_list = connector.user_groups(userdn)
+    group_list = connector.user_groups(userdn, attrlist=['cn'])
     if group_list is None:
         return None
     group_dns = []
