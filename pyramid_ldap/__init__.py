@@ -63,7 +63,7 @@ class _LDAPQuery(object):
             bytes_(self.base_dn % kw, 'utf-8'), 
             self.scope,
             bytes_(self.filter_tmpl % kw, 'utf-8'),
-            tuple(attrlist) if isinstance(attrlist, list) else attrlist,
+            tuple(sorted(attrlist)) if isinstance(attrlist, list) else attrlist,
             )
 
         logger.debug('searching for %r' % (cache_key,))

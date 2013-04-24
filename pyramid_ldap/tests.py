@@ -207,6 +207,13 @@ class Test_LDAPQuery(unittest.TestCase):
         self.assertEqual(inst.cache, {})
         self.assertNotEqual(inst.last_timeslice, 0)
 
+    def test_execute_cache_with_filter(self):
+        inst = self._makeOne('%(login)s', '%(login)s', None, 0)
+        conn = DummyConnection('abc')
+        result = inst.execute(conn, login='foo', attrlist=['foo', 'bar'])
+        self.assertEqual(result, 'abc')
+        self.assertEqual(conn.arg, ('foo', None, 'foo', ('bar', 'foo')))
+
     def test_execute_no_cache_period(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 0)
         conn = DummyConnection('abc')
@@ -228,7 +235,7 @@ class Test_LDAPQuery(unittest.TestCase):
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'def')
-        
+
 class DummyLDAPConnector(object):
     def __init__(self, dn, group_list):
         self.dn = dn
