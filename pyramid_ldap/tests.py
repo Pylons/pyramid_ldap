@@ -212,19 +212,19 @@ class Test_LDAPQuery(unittest.TestCase):
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'abc')
-        self.assertEqual(conn.arg, ('foo', None, 'foo'))
+        self.assertEqual(conn.arg, ('foo', None, 'foo', None))
 
     def test_execute_with_cache_period_miss(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 1)
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'abc')
-        self.assertEqual(conn.arg, ('foo', None, 'foo'))
+        self.assertEqual(conn.arg, ('foo', None, 'foo', None))
 
     def test_execute_with_cache_period_hit(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 1)
         inst.last_timeslice = sys.maxint
-        inst.cache[('foo', None, 'foo')] = 'def'
+        inst.cache[('foo', None, 'foo', None)] = 'def'
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'def')
@@ -234,7 +234,7 @@ class DummyLDAPConnector(object):
         self.dn = dn
         self.group_list = group_list
 
-    def user_groups(self, dn):
+    def user_groups(self, dn, attrlist=None):
         return self.group_list
         
 class Dummy(object):
