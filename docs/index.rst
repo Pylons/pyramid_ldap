@@ -95,7 +95,8 @@ the startup phase of your Pyramid application.
 ``Configurator.ldap_set_login_query``
 
    This configurator method accepts parameters which tell ``pyramid_ldap``
-   how to find a user based on a login.  Invoking this method allows the LDAP
+   how to find a user based on a login, and which LDAP attributes to retrieve
+   during user lookups.  Invoking this method allows the LDAP
    connector's ``authenticate`` method to work.  See
    :func:`pyramid_ldap.ldap_set_login_query` for argument details.
 
@@ -105,8 +106,9 @@ the startup phase of your Pyramid application.
 ``Configurator.ldap_set_groups_query``
 
    This configurator method accepts parameters which tell ``pyramid_ldap``
-   how to find groups based on a user DN.  Invoking this method allows the
-   connector's ``user_groups`` method to work.  See
+   how to find groups based on a user DN, and which group attributes to
+   retrieve during lookups.  Invoking this method allows the connector's
+   ``user_groups`` method to work.  See
    :func:`pyramid_ldap.ldap_set_groups_query` for argument details.
 
    If ``ldap_set_groups_query`` is not called, the

@@ -118,6 +118,7 @@ class Test_ldap_set_groups_query(unittest.TestCase):
         self._callFUT(config, 'dn', 'tmpl')
         self.assertEqual(config.registry.ldap_groups_query.base_dn, 'dn')
         self.assertEqual(config.registry.ldap_groups_query.filter_tmpl, 'tmpl')
+        self.assertEqual(config.registry.ldap_groups_query.attrlist, ('',))
         self.assertEqual(config.registry.ldap_groups_query.scope,
                          ldap.SCOPE_SUBTREE)
         self.assertEqual(config.registry.ldap_groups_query.cache_period, 0)
@@ -133,6 +134,7 @@ class Test_ldap_set_login_query(unittest.TestCase):
         self._callFUT(config, 'dn', 'tmpl')
         self.assertEqual(config.registry.ldap_login_query.base_dn, 'dn')
         self.assertEqual(config.registry.ldap_login_query.filter_tmpl, 'tmpl')
+        self.assertEqual(config.registry.ldap_login_query.attrlist, None)
         self.assertEqual(config.registry.ldap_login_query.scope,
                          ldap.SCOPE_ONELEVEL)
         self.assertEqual(config.registry.ldap_login_query.cache_period, 0)
@@ -192,7 +194,7 @@ class TestConnector(unittest.TestCase):
 class Test_LDAPQuery(unittest.TestCase):
     def _makeOne(self, base_dn, filter_tmpl, scope, cache_period):
         from pyramid_ldap import _LDAPQuery
-        return _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
+        return _LDAPQuery(base_dn, filter_tmpl, scope, None, cache_period)
 
     def test_query_cache_no_rollover(self):
         inst = self._makeOne(None, None, None, 1)
@@ -212,23 +214,23 @@ class Test_LDAPQuery(unittest.TestCase):
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'abc')
-        self.assertEqual(conn.arg, ('foo', None, 'foo'))
+        self.assertEqual(conn.arg, ('foo', None, 'foo', None))
 
     def test_execute_with_cache_period_miss(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 1)
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'abc')
-        self.assertEqual(conn.arg, ('foo', None, 'foo'))
+        self.assertEqual(conn.arg, ('foo', None, 'foo', None))
 
     def test_execute_with_cache_period_hit(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 1)
         inst.last_timeslice = sys.maxint
-        inst.cache[('foo', None, 'foo')] = 'def'
+        inst.cache[('foo', None, 'foo', None)] = 'def'
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'def')
-        
+
 class DummyLDAPConnector(object):
     def __init__(self, dn, group_list):
         self.dn = dn

@@ -27,17 +27,22 @@ logger = logging.getLogger(__name__)
 class _LDAPQuery(object):
     """ Represents an LDAP query.  Provides rudimentary in-RAM caching of
     query results."""
-    def __init__(self, base_dn, filter_tmpl, scope, cache_period):
+    def __init__(self, base_dn, filter_tmpl, scope, attrlist, cache_period):
         self.base_dn = base_dn
         self.filter_tmpl = filter_tmpl
         self.scope = scope
+        if attrlist is not None:
+            self.attrlist = tuple(sorted(attrlist))
+        else:
+            self.attrlist = None
         self.cache_period = cache_period
         self.last_timeslice = 0
         self.cache = {}
 
     def __str__(self):
         return ('base_dn=%(base_dn)s, filter_tmpl=%(filter_tmpl)s, '
-                'scope=%(scope)s, cache_period=%(cache_period)s' % 
+                'scope=%(scope)s, attrlist=%(attrlist)r, '
+                'cache_period=%(cache_period)s' % 
                 self.__dict__)
 
     def query_cache(self, cache_key):
@@ -61,7 +66,8 @@ class _LDAPQuery(object):
         cache_key = (
             bytes_(self.base_dn % kw, 'utf-8'), 
             self.scope,
-            bytes_(self.filter_tmpl % kw, 'utf-8')
+            bytes_(self.filter_tmpl % kw, 'utf-8'),
+            self.attrlist,
             )
 
         logger.debug('searching for %r' % (cache_key,))
@@ -159,7 +165,8 @@ class Connector(object):
                 return None
 
 def ldap_set_login_query(config, base_dn, filter_tmpl, 
-                          scope=ldap.SCOPE_ONELEVEL, cache_period=0):
+                          scope=ldap.SCOPE_ONELEVEL, cache_period=0,
+                          attrlist=None):
     """ Configurator method to set the LDAP login search.  ``base_dn`` is the
     DN at which to begin the search.  ``filter_tmpl`` is a string which can
     be used as an LDAP filter: it should contain the replacement value
@@ -179,7 +186,7 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
     The registered search must return one and only one value to be considered
     a valid login.
     """
-    query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
+    query = _LDAPQuery(base_dn, filter_tmpl, scope, attrlist, cache_period)
     def register():
         config.registry.ldap_login_query = query
 
@@ -193,7 +200,8 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
     config.action('ldap-set-login-query', register, introspectables=(intr,))
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
-                           scope=ldap.SCOPE_SUBTREE, cache_period=0):
+                           scope=ldap.SCOPE_SUBTREE, cache_period=0,
+                           attrlist=('',)):
     """ Configurator method to set the LDAP groups search.  ``base_dn`` is
     the DN at which to begin the search.  ``filter_tmpl`` is a string which
     can be used as an LDAP filter: it should contain the replacement value
@@ -211,7 +219,7 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
             )
 
     """
-    query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
+    query = _LDAPQuery(base_dn, filter_tmpl, scope, attrlist, cache_period)
     def register():
         config.registry.ldap_groups_query = query
     intr = config.introspectable(
