@@ -236,7 +236,7 @@ class DummyLDAPConnector(object):
         self.dn = dn
         self.group_list = group_list
 
-    def user_groups(self, dn, attrlist=None):
+    def user_groups(self, dn):
         return self.group_list
         
 class Dummy(object):

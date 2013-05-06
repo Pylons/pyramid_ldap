@@ -1,3 +1,10 @@
+Development
+-----------
+
+- Add attrlist to LDAPQuery, set_login_query, set_groups_query to allow
+  retrieved attributes to be filtered. (Default: All attributes on users, no
+  attributes on groups).
+
 0.1
 ---
 
