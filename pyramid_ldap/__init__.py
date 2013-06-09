@@ -129,7 +129,7 @@ class Connector(object):
         self.login_qry_identif = _registry_identifier('ldap_login_query', context)
         self.group_qry_identif = _registry_identifier('ldap_groups_query', context)
 
-    def authenticate(self, login, password):
+    def authenticate(self, login='', password=''):
         """ Given a login name and a password, return a tuple of ``(dn,
         attrdict)`` if the matching user if the user exists and his password
         is correct.  Otherwise return ``None``.
@@ -150,7 +150,6 @@ class Connector(object):
                 'ldap_set_login_query was not called during setup')
         
         try:
-            login = login or ''
             escaped_login = ldap.filter.escape_filter_chars(login)
             with self.manager.connection() as conn:
                 result = search.execute(conn, login=escaped_login, password=password, sizelimit=1)
