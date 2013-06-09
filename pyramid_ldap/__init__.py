@@ -87,7 +87,8 @@ class _LDAPQuery(object):
         for entries matching parameters in kw.
 
         Skip the real query and return an hard-coded result based on string
-        interpolation of ``base_dn`` if the ``filter_tmpl`` attribute is empty"""
+        interpolation of ``base_dn`` if the ``filter_tmpl`` attribute
+        is empty"""
         search_filter = self.filter_tmpl % kw
         search_base = self.base_dn % kw
         if search_filter:
@@ -138,7 +139,7 @@ class Connector(object):
         dictionary mapping LDAP user attributes to sequences of values.  The
         keys and values in the dictionary values provided will be decoded
         from UTF-8, recursively, where possible.  The dictionary returned is
-        a case-insensitive dictionary implemenation.
+        a case-insensitive dictionary implementation.
 
         If :meth:`pyramid.config.Configurator.ldap_set_login_query` was not
         called, using this function will raise an
