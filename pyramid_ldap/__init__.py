@@ -105,9 +105,18 @@ class Connector(object):
         from UTF-8, recursively, where possible.  The dictionary returned is
         a case-insensitive dictionary implemenation.
 
+        A zero length password will always be considered invalid since it
+        results in a request for "unauthenticated authentication" which should
+        not be used for LDAP based authentication. See `section 5.1.2 of
+        RFC-4513 <http://tools.ietf.org/html/rfc4513#section-5.1.2>`_ for a
+        description of this behavior.
+
         If :meth:`pyramid.config.Configurator.ldap_set_login_query` was not
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`."""
+        if password == '':
+            return None
+            
         with self.manager.connection() as conn:
             search = getattr(self.registry, 'ldap_login_query', None)
             if search is None:

@@ -270,7 +270,13 @@ The LDAP connector instance has an
 and password.  It will return a data structure containing the user's DN as
 well as the user attributes if the user exists and his password is correct.
 It will return ``None`` if the user doesn't exist or if the user exists and
-his password is incorrect.
+his password is incorrect. A zero length password is always considered invalid
+since it is, according to the LDAP spec, a request for "unauthenticated
+authentication." Unauthenticated authentication should not be used for LDAP
+based authentication.
+
+See `section 5.1.2 of RFC-4513 <http://tools.ietf.org/html/rfc4513#section-5.1.2>`_
+for a description of this behavior.
 
 When the user's name and password are correct, the ``login`` view uses the
 ``pyramid.security.remember`` API to set headers indicating that the user is
