@@ -232,7 +232,8 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
     config.action('ldap-set-groups-query', register, introspectables=(intr,))
 
 def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
-               retry_delay=.1, use_tls=False, timeout=-1, use_pool=True):
+               retry_delay=.1, use_tls=False, timeout=-1, use_pool=True,
+               group_recursion_limit=20):
     """ Configurator method to set up an LDAP connection pool.
 
     - **uri**: ldap server uri **[mandatory]**
@@ -247,6 +248,8 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     - **timeout**: connector timeout. **default: -1**
     - **use_pool**: activates the pool. If False, will recreate a connector
        each time. **default: True**
+    - **group_recursion_limit**: sets up a hard limit for group membership
+       recursion for authorization. **default: 20**
     """
     vals = dict(
         uri=uri, bind=bind, passwd=passwd, size=pool_size, 
@@ -270,6 +273,10 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
         )
     config.action('ldap-setup', None, introspectables=(intr,))
 
+    # store the recursion limit
+    config.add_settings({'pyramid_ldap.group_recursion_limit':
+                        str(group_recursion_limit)})
+
 def get_ldap_connector(request):
     """ Return the LDAP connector attached to the request.  If
     :meth:`pyramid.config.Configurator.ldap_setup` was not called, using
@@ -281,20 +288,29 @@ def get_ldap_connector(request):
             'to use an ldap connector')
     return connector
 
-def groupfinder(userdn, request):
+def groupfinder(userdn, request, depth=0):
     """ A groupfinder implementation useful in conjunction with
     out-of-the-box Pyramid authentication policies.  It returns the DN of
     each group belonging to the user specified by ``userdn`` to as a
     principal in the list of results; if the user does not exist, it returns
     None."""
+    # stop a runaway recursion, just a sanity check
+    if depth > int(request.registry.settings['pyramid_ldap.group_recursion_limit']):
+        return None
     connector = get_ldap_connector(request)
     group_list = connector.user_groups(userdn)
     if group_list is None:
         return None
-    group_dns = []
+    group_dns = set()
     for dn, attrs in group_list:
-        group_dns.append(dn)
-    return group_dns
+        # check to avoid cyclic group ownership
+        if not dn in group_dns:
+            group_recurse = groupfinder(dn, request, depth + 1)
+            if group_recurse is not None:
+                group_dns.update(group_recurse)
+            group_dns.add(dn)
+
+    return list(group_dns)
 
 def _ldap_decode(result):
     """ Decode (recursively) strings in the result data structure to Unicode
