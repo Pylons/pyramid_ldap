@@ -124,7 +124,11 @@ class Connector(object):
                     'ldap_set_login_query was not called during setup')
             
             result = search.execute(conn, login=login, password=password)
-            if len(result) == 1:
+            expected_results = 1
+            if conn.get_option(ldap.OPT_REFERRALS) == 0:
+                expected_results = 2
+
+            if len(result) == expected_results:
                 login_dn = result[0][0]
             else:
                 return None
