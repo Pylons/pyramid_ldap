@@ -2,11 +2,12 @@ Next release
 ------------
 
 - Support creation of multiple co-existing ldap contexts in the same
-  application.
+  application. See https://github.com/Pylons/pyramid_ldap/pull/6
 
 - Add a "search_after_bind" attribute to the _LDAPQuery class, to
   help in reading directory entry attributes when the directory server
   is configured to hide them in the before login search phase.
+  See https://github.com/Pylons/pyramid_ldap/pull/5
 
 - Set a size limit on pre-login entry dn searches.
 
