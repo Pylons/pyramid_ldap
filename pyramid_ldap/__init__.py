@@ -159,7 +159,10 @@ class Connector(object):
                 'ldap_set_login_query was not called during setup')
         
         try:
-            escaped_login = ldap.filter.escape_filter_chars(login)
+            if login:
+                escaped_login = ldap.filter.escape_filter_chars(login)
+            else:
+                escaped_login = ''
             with self.manager.connection() as conn:
                 result = search.execute(conn, login=escaped_login, password=password, sizelimit=1)
                 if len(result) == 1:
