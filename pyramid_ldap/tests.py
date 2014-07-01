@@ -220,6 +220,13 @@ class TestConnector(unittest.TestCase):
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.authenticate(None, None), None)
 
+    def test_authenticate_empty_password(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        self.assertEqual(inst.authenticate('foo', ''), None)
+
     def test_authenticate_search_returns_one_result(self):
         manager = DummyManager()
         registry = Dummy()
