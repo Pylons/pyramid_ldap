@@ -108,26 +108,26 @@ def _timeslice(period, when=None):
         when =  time.time()
     return when - (when % period)
     
-def _activity_identifier(base_identifier, context=''):
-    if context:
-        return '-'.join((base_identifier, context))
+def _activity_identifier(base_identifier, realm=''):
+    if realm:
+        return '-'.join((base_identifier, realm))
     else:
         return base_identifier
 
-def _registry_identifier(base_identifier, context=''):
-    if context:
-        return '_'.join((base_identifier, context))
+def _registry_identifier(base_identifier, realm=''):
+    if realm:
+        return '_'.join((base_identifier, realm))
     else:
         return base_identifier
 
 class Connector(object):
     """ Provides API methods for accessing LDAP authentication information."""
-    def __init__(self, registry, manager, context=''):
+    def __init__(self, registry, manager, realm=''):
         self.registry = registry
         self.manager = manager
-        self.context = context
-        self.login_qry_identif = _registry_identifier('ldap_login_query', context)
-        self.group_qry_identif = _registry_identifier('ldap_groups_query', context)
+        self.realm = realm
+        self.login_qry_identif = _registry_identifier('ldap_login_query', realm)
+        self.group_qry_identif = _registry_identifier('ldap_groups_query', realm)
 
     def authenticate(self, login='', password=''):
         """ Given a login name and a password, return a tuple of ``(dn,
@@ -175,7 +175,7 @@ class Connector(object):
                     result = search.execute_cache(conn, login_dn,
                                                    ldap.SCOPE_BASE,
                                                    '(objectClass=*)')
-                return _ldap_tag_dn_decode(result, context=self.context)[0]
+                return _ldap_tag_dn_decode(result, realm=self.realm)[0]
         except (ldap.LDAPError, ldap.SIZELIMIT_EXCEEDED, ldap.INVALID_CREDENTIALS):
             logger.debug('Exception in authenticate with login %r - - ' % login,
                          exc_info=True)
@@ -217,7 +217,7 @@ class Connector(object):
 
 def ldap_set_login_query(config, base_dn, filter_tmpl, 
                           scope=ldap.SCOPE_ONELEVEL, cache_period=0,
-                          search_after_bind=False, context=''):
+                          search_after_bind=False, realm=''):
     """ Configurator method to set the LDAP login search.
 
     - **base_dn**: the DN at which to begin the search **[mandatory]**
@@ -264,9 +264,9 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
             )
 
     """
-    query_identif = _registry_identifier('ldap_login_query', context)
-    intr_identif = _registry_identifier('pyramid_ldap', context)
-    act_identif = _activity_identifier('pyramid_ldap', context)
+    query_identif = _registry_identifier('ldap_login_query', realm)
+    intr_identif = _registry_identifier('pyramid_ldap', realm)
+    act_identif = _activity_identifier('pyramid_ldap', realm)
 
     query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period,
                         search_after_bind=search_after_bind)
@@ -283,7 +283,7 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
     config.action(act_identif, register, introspectables=(intr,))
 
 def ldap_set_groups_query(config, base_dn, filter_tmpl, 
-                           scope=ldap.SCOPE_SUBTREE, cache_period=0, context=''):
+                           scope=ldap.SCOPE_SUBTREE, cache_period=0, realm=''):
     """ Configurator method to set the LDAP groups search.
 
     - **base_dn**: the DN at which to begin the search **[mandatory]**
@@ -304,9 +304,9 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
             )
 
     """
-    query_identif = _registry_identifier('ldap_groups_query', context)
-    intr_identif = _registry_identifier('pyramid_ldap', context)
-    act_identif = _activity_identifier('ldap-set-groups-query', context)
+    query_identif = _registry_identifier('ldap_groups_query', realm)
+    intr_identif = _registry_identifier('pyramid_ldap', realm)
+    act_identif = _activity_identifier('ldap-set-groups-query', realm)
 
     query = _LDAPQuery(base_dn, filter_tmpl, scope, cache_period)
 
@@ -323,7 +323,7 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
     config.action(act_identif, register, introspectables=(intr,))
 
 def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
-               retry_delay=.1, use_tls=False, timeout=-1, use_pool=True, context=''):
+               retry_delay=.1, use_tls=False, timeout=-1, use_pool=True, realm=''):
     """ Configurator method to set up an LDAP connection pool.
 
     - **uri**: ldap server uri **[mandatory]**
@@ -339,9 +339,9 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     - **use_pool**: activates the pool. If False, will recreate a connector
        each time. **default: True**
     """
-    conn_identif = _registry_identifier('ldap_connector', context)
-    intr_identif = _registry_identifier('pyramid_ldap', context)
-    act_identif = _activity_identifier('ldap-setup', context)
+    conn_identif = _registry_identifier('ldap_connector', realm)
+    intr_identif = _registry_identifier('pyramid_ldap', realm)
+    act_identif = _activity_identifier('ldap-setup', realm)
 
     vals = dict(
         uri=uri, bind=bind, passwd=passwd, size=pool_size, 
@@ -353,7 +353,7 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
 
     def get_connector(request):
         registry = request.registry
-        return Connector(registry, manager, context)
+        return Connector(registry, manager, realm)
 
     config.set_request_property(get_connector, conn_identif, reify=True)
 
@@ -365,16 +365,16 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
         )
     config.action(act_identif, None, introspectables=(intr,))
 
-def get_ldap_connector_name(context=''):
+def get_ldap_connector_name(realm=''):
     """ Return the name of the connector attached to the request
-    for the named **context**."""
-    return _registry_identifier('ldap_connector', context)
+    for the named **realm**."""
+    return _registry_identifier('ldap_connector', realm)
 
-def get_ldap_connector(request, context=''):
+def get_ldap_connector(request, realm=''):
     """ Return the LDAP connector attached to the request.  If
     :meth:`pyramid.config.Configurator.ldap_setup` was not called, using
     this function will raise an :exc:`pyramid.exceptions.ConfigurationError`."""
-    conn_name = get_ldap_connector_name(context)
+    conn_name = get_ldap_connector_name(realm)
     connector = getattr(request, conn_name, None)
     if connector is None:
         raise ConfigurationError(
@@ -389,7 +389,7 @@ def groupfinder(userdn, request):
     principal in the list of results; if the user does not exist, it returns
     None."""
     parsed = ldapurl.LDAPUrl(userdn)
-    connector = get_ldap_connector(request, context=parsed.hostport)
+    connector = get_ldap_connector(request, realm=parsed.hostport)
     group_list = connector.user_groups(parsed.dn)
     if group_list is None:
         return None
@@ -403,9 +403,9 @@ def _ldap_decode(result):
     using the utf-8 encoding """
     return _Decoder().decode(result)
 
-def _ldap_tag_dn_decode(result, context=''):
+def _ldap_tag_dn_decode(result, realm=''):
 
-    return [('ldap://%s/%s' % (context, ldapurl.ldapUrlEscape(dn)),
+    return [('ldap://%s/%s' % (realm, ldapurl.ldapUrlEscape(dn)),
                                                                attributes)
                    for dn, attributes in _ldap_decode(result)
             ]
