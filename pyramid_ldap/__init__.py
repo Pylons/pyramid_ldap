@@ -233,6 +233,8 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
       **default**: ``0``
     - **search_after_bind**: do a base search on the entry itself after
       a successful bind
+    - **realm**: A connection identifier
+      **default**: ``''``
 
     Example::
 
@@ -294,6 +296,8 @@ def ldap_set_groups_query(config, base_dn, filter_tmpl,
     - **cache_period**: the number of seconds to cache login search results
       if 0, results will not be cached
       **default**: ``0``
+    - **realm**: A connection identifier
+      **default**: ``''``
 
     Example::
 
@@ -338,6 +342,8 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
     - **timeout**: connector timeout. **default: -1**
     - **use_pool**: activates the pool. If False, will recreate a connector
        each time. **default: True**
+    - **realm**: A connection identifier
+      **default**: ``''``
     """
     conn_identif = _registry_identifier('ldap_connector', realm)
     intr_identif = _registry_identifier('pyramid_ldap', realm)
@@ -371,9 +377,11 @@ def get_ldap_connector_name(realm=''):
     return _registry_identifier('ldap_connector', realm)
 
 def get_ldap_connector(request, realm=''):
-    """ Return the LDAP connector attached to the request.  If
-    :meth:`pyramid.config.Configurator.ldap_setup` was not called, using
-    this function will raise an :exc:`pyramid.exceptions.ConfigurationError`."""
+    """ Return the LDAP connector attached to the request for the connection
+    identified by the ``realm`` name.
+    If :meth:`pyramid.config.Configurator.ldap_setup` was not called for the
+    named ``realm``, using this function will raise
+    an :exc:`pyramid.exceptions.ConfigurationError`."""
     conn_name = get_ldap_connector_name(realm)
     connector = getattr(request, conn_name, None)
     if connector is None:
