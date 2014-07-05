@@ -69,13 +69,13 @@ class Test_groupfinder(unittest.TestCase):
     def test_no_group_list(self):
         request = testing.DummyRequest()
         request.ldap_connector = DummyLDAPConnector('dn', None)
-        result = self._callFUT('dn', request)
+        result = self._callFUT('ldap:///dn', request)
         self.assertEqual(result, None)
 
     def test_with_group_list(self):
         request = testing.DummyRequest()
         request.ldap_connector = DummyLDAPConnector('dn', [('groupdn', None)])
-        result = self._callFUT('dn', request)
+        result = self._callFUT('ldap:///dn', request)
         self.assertEqual(result, ['groupdn'])
 
 class Test_get_ldap_connector(unittest.TestCase):
@@ -137,6 +137,72 @@ class Test_ldap_set_login_query(unittest.TestCase):
                          ldap.SCOPE_ONELEVEL)
         self.assertEqual(config.registry.ldap_login_query.cache_period, 0)
 
+class Test_get_ldap_connector_w_realm(unittest.TestCase):
+    named_realm = 'REALM'
+    def _callFUT(self, request):
+        from pyramid_ldap import get_ldap_connector
+        return get_ldap_connector(request, realm=self.named_realm)
+
+    def test_no_connector(self):
+        request = testing.DummyRequest()
+        self.assertRaises(ConfigurationError, self._callFUT, request)
+        
+    def test_with_connector(self):
+        request = testing.DummyRequest()
+        setattr(request, 'ldap_connector_%s' % self.named_realm, True)
+        result = self._callFUT(request)
+        self.assertEqual(result, True)
+
+class Test_ldap_setup_w_realm(unittest.TestCase):
+    named_realm = 'REALM'
+    def _callFUT(self, config, uri, **kw):
+        from pyramid_ldap import ldap_setup
+        return ldap_setup(config, uri, realm=self.named_realm, **kw)
+
+    def test_it_defaults(self):
+        from pyramid_ldap import Connector
+        config = DummyConfig()
+        self._callFUT(config, 'ldap://')
+        self.assertEqual(config.prop_name, 'ldap_connector_%s' % self.named_realm)
+        self.assertEqual(config.prop_reify, True)
+        request = testing.DummyRequest()
+        self.assertEqual(config.prop(request).__class__, Connector)
+
+class Test_ldap_set_groups_query_w_realm(unittest.TestCase):
+    named_realm = 'REALM'
+    def _callFUT(self, config, base_dn, filter_tmpl, **kw):
+        from pyramid_ldap import ldap_set_groups_query
+        return ldap_set_groups_query(config, base_dn, filter_tmpl, realm=self.named_realm, **kw)
+
+    def test_it_defaults(self):
+        import ldap
+        config = DummyConfig()
+        self._callFUT(config, 'dn', 'tmpl')
+        qry = getattr(config.registry, 'ldap_groups_query_%s' % self.named_realm)
+        self.assertRaises(AttributeError, lambda: config.registry.ldap_groups_query.base_dn)
+        self.assertEqual(qry.base_dn, 'dn')
+        self.assertEqual(qry.filter_tmpl, 'tmpl')
+        self.assertEqual(qry.scope,
+                         ldap.SCOPE_SUBTREE)
+        self.assertEqual(qry.cache_period, 0)
+
+class Test_ldap_set_login_query_w_realm(unittest.TestCase):
+    named_realm = 'REALM'
+    def _callFUT(self, config, base_dn, filter_tmpl, **kw):
+        from pyramid_ldap import ldap_set_login_query
+        return ldap_set_login_query(config, base_dn, filter_tmpl, realm=self.named_realm, **kw)
+
+    def test_it_defaults(self):
+        import ldap
+        config = DummyConfig()
+        self._callFUT(config, 'dn', 'tmpl')
+        qry = getattr(config.registry, 'ldap_login_query_%s' % self.named_realm)
+        self.assertEqual(qry.base_dn, 'dn')
+        self.assertEqual(qry.filter_tmpl, 'tmpl')
+        self.assertEqual(qry.scope,
+                         ldap.SCOPE_ONELEVEL)
+        self.assertEqual(qry.cache_period, 0)
+
 class TestConnector(unittest.TestCase):
     def _makeOne(self, registry, manager):
         from pyramid_ldap import Connector
@@ -166,7 +232,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), ('a', 'b'))
+        self.assertEqual(inst.authenticate(None, None), ('ldap:///a', 'b'))
 
     def test_authenticate_search_bind_raises(self):
         import ldap
@@ -186,7 +252,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_groups_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.user_groups(None), [('a', 'b')])
+        self.assertEqual(inst.user_groups(None), [('ldap:///a', 'b')])
 
     def test_user_groups_execute_raises(self):
         import ldap
@@ -278,9 +344,10 @@ class DummyManager(object):
                 raise e
         
 class DummySearch(object):
-    def __init__(self, result, exc=None):
+    def __init__(self, result, exc=None, search_after_bind=False):
         self.result = result
         self.exc = exc
+        self.search_after_bind = search_after_bind
 
     def execute(self, conn, **kw):
         if self.exc is not None:
@@ -296,3 +363,10 @@ class DummyConnection(object):
         self.arg = arg
         return self.result
     
+    def search_ext_s(self, *arg, **kw):
+        import ldap
+        sizelimit = kw.get('sizelimit', 0)
+        self.arg = arg
+        if sizelimit and len(self.result) > sizelimit:
+            raise ldap.SIZELIMIT_EXCEEDED
+        return self.result
