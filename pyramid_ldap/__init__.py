@@ -288,6 +288,7 @@ def groupfinder(userdn, request):
     principal in the list of results; if the user does not exist, it returns
     None."""
     connector = get_ldap_connector(request)
+    userdn = userdn.replace('\\', '\\5c')
     group_list = connector.user_groups(userdn)
     if group_list is None:
         return None
