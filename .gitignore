@@ -4,6 +4,8 @@
 *.pyc
 *$py.class
 *~
+/.eggs
+
 .coverage
 .tox/
 nosetests.xml

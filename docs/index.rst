@@ -10,6 +10,11 @@ application.  Thanks to the ever-awesome `SurveyMonkey
 
 .. warning:: This package only works with Pyramid 1.3a9 and better.
 
+Changelog
+---------
+
+.. include:: ../CHANGES.txt
+
 Installation
 ------------
 
@@ -17,7 +22,9 @@ Installation
 and `ldappool <https://github.com/mozilla-services/ldappool>`_ packages.
 ``python_ldap`` requires OpenLDAP development libraries to be installed
 before it can successfully be installed.  An easy way to get these installed
-on a Debian Linux system is to use ``apt-get build-dep python-ldap``.
+on a Debian Linux system is to use ``apt-get build-dep python-ldap``. Or in
+Ubuntu 16.04 ``apt-get install libldap2-dev libsasl2-dev``
+
 
 After you've got the OpenLDAP dependencies installed, you can install
 ``pyramid_ldap`` using setuptools, e.g. (within a virtualenv)::
@@ -175,7 +182,7 @@ Here's a small application which uses the ``pyramid_ldap`` API:
                 return HTTPFound('/', headers=headers)
             else:
                 error = 'Invalid credentials'
-                
+
         return dict(
             login_url=url,
             login=login,
@@ -331,6 +338,7 @@ Visit http://github.com/Pylons/pyramid_ldap to download development or
 tagged versions.
 
 Visit http://github.com/Pylons/pyramid_ldap/issues to report bugs.
+
 
 Indices and tables
 ------------------
