@@ -1,5 +1,5 @@
-Next release
-------------
+0.2
+---
 
 - Prevent the use of zero-length password authentication.  See
   https://github.com/Pylons/pyramid_ldap/pull/13
