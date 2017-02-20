@@ -81,7 +81,7 @@ Changes: http://docs.pylonsproject.org/projects/pyramid_ldap/latest/
 
 === For all subsequent pre-releases ===
 
-Changes: http://docs.pylonsproject.org/projects/pyramid_ldap/latest/changes.html#version-yyyy-mm-dd
+Changes: http://docs.pylonsproject.org/projects/pyramid_ldap/latest/changes.html
 
 Issues: https://github.com/Pylons/pyramid_ldap/issues
 ```
