@@ -66,17 +66,56 @@ class Test_groupfinder(unittest.TestCase):
         from pyramid_ldap import groupfinder
         return groupfinder(dn, request)
 
-    def test_no_group_list(self):
+    def _get_request(self):
         request = testing.DummyRequest()
-        request.ldap_connector = DummyLDAPConnector('dn', None)
+        request.registry = DummyRegistry({'pyramid_ldap.group_recursion_limit': str(20)})
+        return request
+
+    def test_no_group_list(self):
+        request = self._get_request()
+        request.ldap_connector = DummyLDAPConnector([('dn', None)])
         result = self._callFUT('dn', request)
         self.assertEqual(result, None)
 
     def test_with_group_list(self):
-        request = testing.DummyRequest()
-        request.ldap_connector = DummyLDAPConnector('dn', [('groupdn', None)])
+        request = self._get_request()
+        request.ldap_connector = DummyLDAPConnector([('dn', [('groupdn', None)])])
         result = self._callFUT('dn', request)
         self.assertEqual(result, ['groupdn'])
+
+    def test_with_recursive_group_list(self):
+        request = self._get_request()
+        request.ldap_connector = DummyLDAPConnector([
+            ('dn', [('intergroupdn', None)]),
+            ('intergroupdn', [('groupdn', None)])
+        ])
+        result = self._callFUT('dn', request)
+        self.assertTrue(isinstance(result, list))
+        self.assertTrue('groupdn' in result)
+
+    def test_with_long_recursive_group_list(self):
+        request = self._get_request()
+
+        dep_list = [('inter%d' % i, [('inter%d' % (i + 1), None)]) for i in range(19)] 
+        request.ldap_connector = DummyLDAPConnector(
+            [('dn', [('inter0', None)])] + dep_list + [('inter19', [('groupdn', None)])]
+        )
+        result = self._callFUT('dn', request)
+        self.assertTrue(isinstance(result, list))
+        self.assertTrue('groupdn' in result)
+
+    def test_with_really_long_recursive_group_list(self):
+        request = self._get_request()
+
+        dep_list = [('inter%d' % i, [('inter%d' % (i + 1), None)]) for i in range(21)] 
+        request.ldap_connector = DummyLDAPConnector(
+            [('dn', [('inter0', None)])] + dep_list + [('inter21', [('groupdn', None)])]
+        )
+        result = self._callFUT('dn', request)
+        self.assertTrue(isinstance(result, list))
+        # it should not succeed because it's longer than a hard-coded recursion limit
+        self.assertFalse('groupdn' in result)
+
 
 class Test_get_ldap_connector(unittest.TestCase):
     def _callFUT(self, request):
@@ -237,17 +276,20 @@ class Test_LDAPQuery(unittest.TestCase):
         self.assertEqual(result, 'def')
         
 class DummyLDAPConnector(object):
-    def __init__(self, dn, group_list):
-        self.dn = dn
-        self.group_list = group_list
+    def __init__(self, map_list):
+        # build the LDAP "database" of DNs and the list of groups they belong to
+        self._dn_map = dict(map_list)
 
     def user_groups(self, dn):
-        return self.group_list
+        if dn in self._dn_map:
+            return self._dn_map[dn]
+        else:
+            return []
         
 class Dummy(object):
     def __init__(self, *arg, **kw):
         pass
-    
+
 class DummyConfig(object):
     introspectable = Dummy
     def __init__(self):
@@ -265,6 +307,13 @@ class DummyConfig(object):
     def action(self, discriminator, callable, introspectables=()):
         if callable:
             callable()
+
+    def add_settings(self, d=dict()):
+        pass
+
+class DummyRegistry(object):
+    def __init__(self, settings):
+        self.settings = settings
     
 class DummyManager(object):
     def __init__(self, with_errors=()):
@@ -276,7 +325,7 @@ class DummyManager(object):
             e = self.with_errors.pop(0)
             if e is not None:
                 raise e
-        
+
 class DummySearch(object):
     def __init__(self, result, exc=None):
         self.result = result
