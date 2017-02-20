@@ -76,14 +76,14 @@ PyPI
 https://pypi.python.org/pypi/pyramid_ldap/
 
 === One time only for new version, first pre-release ===
-What's New
-http://docs.pylonsproject.org/projects/pyramid_ldap/latest/
-=== For all subsequent pre-releases ===
-Changes
-http://docs.pylonsproject.org/projects/pyramid_ldap/latest/changes.html#version-yyyy-mm-dd
 
-Issues
-https://github.com/Pylons/pyramid_ldap/issues
+Changes: http://docs.pylonsproject.org/projects/pyramid_ldap/latest/
+
+=== For all subsequent pre-releases ===
+
+Changes: http://docs.pylonsproject.org/projects/pyramid_ldap/latest/changes.html#version-yyyy-mm-dd
+
+Issues: https://github.com/Pylons/pyramid_ldap/issues
 ```
 
 - Announce to Pyramid maillist.
