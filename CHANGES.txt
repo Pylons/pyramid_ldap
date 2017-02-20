@@ -4,7 +4,13 @@
 - Prevent the use of zero-length password authentication.
   See: https://github.com/Pylons/pyramid_ldap/pull/13
 
-0.1
+0.2
 ---
+
+-  Patched escape sequence issue:
+
+    http://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
+
+    "The backslash character must be escaped in LDAP filters. Substitute \5C"
 
 -  Initial version
