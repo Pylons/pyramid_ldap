@@ -12,7 +12,11 @@ import pprint
 import time
 
 from pyramid.exceptions import ConfigurationError
-from pyramid.compat import bytes_
+from pyramid.compat import (
+    bytes_,
+    iteritems_,
+    text_,
+)
 
 try:
     from ldappool import ConnectionManager
@@ -59,9 +63,9 @@ class _LDAPQuery(object):
 
     def execute(self, conn, **kw):
         cache_key = (
-            bytes_(self.base_dn % kw, 'utf-8'),
+            text_(self.base_dn % kw, 'utf-8'),
             self.scope,
-            bytes_(self.filter_tmpl % kw, 'utf-8')
+            text_(self.filter_tmpl % kw, 'utf-8')
             )
 
         logger.debug('searching for %r' % (cache_key,))
@@ -316,9 +320,13 @@ class _Decoder(object):
         self.encoding = encoding
 
     def decode(self, value):
+        """
+        Uses `pyramid.compat.text_` to convert values to `unicode` in python 2
+        and `str` in python 3.
+        """
         try:
-            if isinstance(value, str):
-                value = value.decode(self.encoding)
+            if isinstance(value, (bytes, str)):
+                value = text_(value, encoding=self.encoding)
             elif isinstance(value, list):
                 value = self._decode_list(value)
             elif isinstance(value, tuple):
@@ -339,7 +347,7 @@ class _Decoder(object):
         # for search results.
         decoded = self.ldap.cidict.cidict()
 
-        for k, v in value.iteritems():
+        for k, v in iteritems_(value):
             decoded[self.decode(k)] = self.decode(v)
 
         return decoded

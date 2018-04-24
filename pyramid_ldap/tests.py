@@ -203,7 +203,7 @@ class Test_LDAPQuery(unittest.TestCase):
 
     def test_query_cache_no_rollover(self):
         inst = self._makeOne(None, None, None, 1)
-        inst.last_timeslice = sys.maxint
+        inst.last_timeslice = sys.maxsize
         inst.cache['foo'] = 'bar'
         self.assertEqual(inst.query_cache('foo'), 'bar')
 
@@ -230,7 +230,7 @@ class Test_LDAPQuery(unittest.TestCase):
 
     def test_execute_with_cache_period_hit(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 1)
-        inst.last_timeslice = sys.maxint
+        inst.last_timeslice = sys.maxsize
         inst.cache[('foo', None, 'foo')] = 'def'
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
