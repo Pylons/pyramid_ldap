@@ -6,7 +6,7 @@ except ImportError: # pragma: no cover
         LDAPError = Exception
         SCOPE_ONELEVEL = None
         SCOPE_SUBTREE = None
-        
+
 import logging
 import pprint
 import time
@@ -37,7 +37,7 @@ class _LDAPQuery(object):
 
     def __str__(self):
         return ('base_dn=%(base_dn)s, filter_tmpl=%(filter_tmpl)s, '
-                'scope=%(scope)s, cache_period=%(cache_period)s' % 
+                'scope=%(scope)s, cache_period=%(cache_period)s' %
                 self.__dict__)
 
     def query_cache(self, cache_key):
@@ -47,7 +47,7 @@ class _LDAPQuery(object):
 
         if ts > self.last_timeslice:
             logger.debug('dumping cache; now ts: %r, last_ts: %r' % (
-                ts, 
+                ts,
                 self.last_timeslice)
                 )
             self.cache = {}
@@ -59,7 +59,7 @@ class _LDAPQuery(object):
 
     def execute(self, conn, **kw):
         cache_key = (
-            bytes_(self.base_dn % kw, 'utf-8'), 
+            bytes_(self.base_dn % kw, 'utf-8'),
             self.scope,
             bytes_(self.filter_tmpl % kw, 'utf-8')
             )
@@ -69,7 +69,7 @@ class _LDAPQuery(object):
         if self.cache_period:
             result = self.query_cache(cache_key)
             if result is not None:
-                logger.debug('result for %r retrieved from cache' % 
+                logger.debug('result for %r retrieved from cache' %
                              (cache_key,)
                              )
             else:
@@ -86,7 +86,7 @@ def _timeslice(period, when=None):
     if when is None: # pragma: no cover
         when =  time.time()
     return when - (when % period)
-    
+
 class Connector(object):
     """ Provides API methods for accessing LDAP authentication information."""
     def __init__(self, registry, manager):
@@ -116,13 +116,13 @@ class Connector(object):
         :exc:`pyramid.exceptions.ConfiguratorError`."""
         if password == '':
             return None
-            
+
         with self.manager.connection() as conn:
             search = getattr(self.registry, 'ldap_login_query', None)
             if search is None:
                 raise ConfigurationError(
                     'ldap_set_login_query was not called during setup')
-            
+
             result = search.execute(conn, login=login, password=password)
             if len(result) == 1:
                 login_dn = result[0][0]
@@ -148,7 +148,7 @@ class Connector(object):
         values in the dictionary values provided will be decoded from UTF-8,
         recursively, where possible.  The dictionary returned is a
         case-insensitive dictionary implemenation.
-        
+
         If :meth:`pyramid.config.Configurator.ldap_set_groups_query` was not
         called, using this function will raise an
         :exc:`pyramid.exceptions.ConfiguratorError`
@@ -167,7 +167,7 @@ class Connector(object):
                     exc_info=True)
                 return None
 
-def ldap_set_login_query(config, base_dn, filter_tmpl, 
+def ldap_set_login_query(config, base_dn, filter_tmpl,
                           scope=ldap.SCOPE_ONELEVEL, cache_period=0):
     """ Configurator method to set the LDAP login search.  ``base_dn`` is the
     DN at which to begin the search.  ``filter_tmpl`` is a string which can
@@ -198,10 +198,10 @@ def ldap_set_login_query(config, base_dn, filter_tmpl,
         str(query),
         'pyramid_ldap login query'
         )
-        
+
     config.action('ldap-set-login-query', register, introspectables=(intr,))
 
-def ldap_set_groups_query(config, base_dn, filter_tmpl, 
+def ldap_set_groups_query(config, base_dn, filter_tmpl,
                            scope=ldap.SCOPE_SUBTREE, cache_period=0):
     """ Configurator method to set the LDAP groups search.  ``base_dn`` is
     the DN at which to begin the search.  ``filter_tmpl`` is a string which
@@ -249,8 +249,8 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
        each time. **default: True**
     """
     vals = dict(
-        uri=uri, bind=bind, passwd=passwd, size=pool_size, 
-        retry_max=retry_max, retry_delay=retry_delay, use_tls=use_tls, 
+        uri=uri, bind=bind, passwd=passwd, size=pool_size,
+        retry_max=retry_max, retry_delay=retry_delay, use_tls=use_tls,
         timeout=timeout, use_pool=use_pool
         )
 
@@ -304,7 +304,7 @@ def _ldap_decode(result):
 class _Decoder(object):
     """
     Stolen from django-auth-ldap.
-    
+
     Encodes and decodes strings in a nested structure of lists, tuples, and
     dicts. This is helpful when interacting with the Unicode-unaware
     python-ldap.
