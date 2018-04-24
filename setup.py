@@ -3,15 +3,21 @@ import os
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.rst')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+try:
+    with open(os.path.join(here, 'README.rst')) as f:
+        README = f.read()
+    with open(os.path.join(here, 'CHANGES.txt')) as f:
+        CHANGES = f.read()
+except IOError:
+    README = CHANGES = ''
 
 requires = [
     'pyramid>=1.3a9',
+    'six', # required by `ldappool` but not in their requirements file
     ]
 if not 'READTHEDOCS' in os.environ:
     # hail mary for readthedocs
-    requires.extend(['ldappool', 'python-ldap'])
+    requires.extend(['ldappool>=2.2.0', 'python-ldap>=3.0'])
 
 sampleapp_extras = [
     'waitress',
@@ -21,7 +27,7 @@ testing_extras = ['nose', 'coverage']
 docs_extras = ['Sphinx']
 
 setup(name='pyramid_ldap',
-      version='0.2',
+      version='0.3',
       description='pyramid_ldap',
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
@@ -29,6 +35,7 @@ setup(name='pyramid_ldap',
         "Framework :: Pylons",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
         "Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP",
         "License :: Repoze Public License",
         ],
