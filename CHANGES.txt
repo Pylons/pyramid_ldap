@@ -1,12 +1,15 @@
 0.3
 ---
 
+- Python 3 is now supported! This is possible thanks to python-ldap supporting
+  python 3
+
 - BREAKING CHANGE: pyramid_ldap now depends on python-ldap >= 3.0, which
   supports python 2 and 3. If you upgrade pyramid_ldap without upgrading
   python-ldap, you will see failures where python-ldap receives text arguments
   instead of bytes. See below for more information.
 
-- python-ldap >= 3.0 began stopped accepting `bytes` type arguments for many
+- python-ldap >= 3.0 stopped accepting `bytes` type arguments for many
   `LDAPObject` methods. We now use the `pyramid.compat.text_` function to
   support text arguments for python 2 and 3.
 
