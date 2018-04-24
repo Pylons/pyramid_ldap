@@ -20,7 +20,7 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(config.directives,
                          ['ldap_setup', 'ldap_set_login_query',
                           'ldap_set_groups_query'])
-        
+
 
 class Test__ldap_decode(unittest.TestCase):
     def _callFUT(self, val):
@@ -86,7 +86,7 @@ class Test_get_ldap_connector(unittest.TestCase):
     def test_no_connector(self):
         request = testing.DummyRequest()
         self.assertRaises(ConfigurationError, self._callFUT, request)
-        
+
     def test_with_connector(self):
         request = testing.DummyRequest()
         request.ldap_connector = True
@@ -235,7 +235,7 @@ class Test_LDAPQuery(unittest.TestCase):
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'def')
-        
+
 class DummyLDAPConnector(object):
     def __init__(self, dn, group_list):
         self.dn = dn
@@ -243,11 +243,11 @@ class DummyLDAPConnector(object):
 
     def user_groups(self, dn):
         return self.group_list
-        
+
 class Dummy(object):
     def __init__(self, *arg, **kw):
         pass
-    
+
 class DummyConfig(object):
     introspectable = Dummy
     def __init__(self):
@@ -256,7 +256,7 @@ class DummyConfig(object):
 
     def add_directive(self, name, fn):
         self.directives.append(name)
-        
+
     def set_request_property(self, prop, name, reify=False):
         self.prop_reify = reify
         self.prop_name = name
@@ -265,7 +265,7 @@ class DummyConfig(object):
     def action(self, discriminator, callable, introspectables=()):
         if callable:
             callable()
-    
+
 class DummyManager(object):
     def __init__(self, with_errors=()):
         self.with_errors = with_errors
@@ -276,7 +276,7 @@ class DummyManager(object):
             e = self.with_errors.pop(0)
             if e is not None:
                 raise e
-        
+
 class DummySearch(object):
     def __init__(self, result, exc=None):
         self.result = result
@@ -287,7 +287,7 @@ class DummySearch(object):
             raise self.exc
         self.kw = kw
         return self.result
-    
+
 class DummyConnection(object):
     def __init__(self, result):
         self.result = result
@@ -295,4 +295,4 @@ class DummyConnection(object):
     def search_s(self, *arg):
         self.arg = arg
         return self.result
-    
+
