@@ -18,4 +18,5 @@ include/
 .idea/
 distribute-*.tar.gz
 env*/
+_env*/
 coverage.xml
