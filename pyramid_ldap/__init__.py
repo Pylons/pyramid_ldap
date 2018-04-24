@@ -13,7 +13,6 @@ import time
 
 from pyramid.exceptions import ConfigurationError
 from pyramid.compat import (
-    bytes_,
     iteritems_,
     text_,
 )
