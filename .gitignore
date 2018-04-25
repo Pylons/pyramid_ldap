@@ -5,11 +5,6 @@
 *$py.class
 *~
 /.eggs
-
-.coverage
-.tox/
-nosetests.xml
-tutorial.db
 build/
 dist/
 bin/
@@ -19,4 +14,11 @@ include/
 distribute-*.tar.gz
 env*/
 _env*/
+.coverage
+.coveragerc
+.coverage.*
+.tox/
+nosetests.xml
 coverage.xml
+nosetests-*.xml
+coverage-*.xml
