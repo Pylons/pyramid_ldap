@@ -33,7 +33,6 @@ setup(name='pyramid_ldap',
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pylons",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.6",
         "Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP",
