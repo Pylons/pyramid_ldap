@@ -145,28 +145,43 @@ class TestConnector(unittest.TestCase):
     def test_authenticate_no_ldap_login_query(self):
         manager = DummyManager()
         inst = self._makeOne(None, manager)
-        self.assertRaises(ConfigurationError, inst.authenticate, None, None)
+        self.assertRaises(ConfigurationError, inst.authenticate,
+                          'login', 'password')
 
-    def test_authenticate_search_returns_non_one_result(self):
+    def test_authenticate_search_none_login_returns_none(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        self.assertEqual(inst.authenticate(None, 'password'), None)
+
+    def test_authenticate_search_none_password_returns_none(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        self.assertEqual(inst.authenticate('login', None), None)
+
+    def test_authenticate_search_returns_none_result(self):
         manager = DummyManager()
         registry = Dummy()
         registry.ldap_login_query = DummySearch([])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), None)
+        self.assertEqual(inst.authenticate('login', 'password'), None)
 
     def test_authenticate_empty_password(self):
         manager = DummyManager()
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate('foo', ''), None)
+        self.assertEqual(inst.authenticate('login', ''), None)
 
     def test_authenticate_search_returns_one_result(self):
         manager = DummyManager()
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), ('a', 'b'))
+        self.assertEqual(inst.authenticate('login', 'password'), ('a', 'b'))
 
     def test_authenticate_search_bind_raises(self):
         import ldap
@@ -174,7 +189,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), None)
+        self.assertEqual(inst.authenticate('login', 'password'), None)
 
     def test_user_groups_no_ldap_groups_query(self):
         manager = DummyManager()
@@ -269,6 +284,7 @@ class DummyConfig(object):
 class DummyManager(object):
     def __init__(self, with_errors=()):
         self.with_errors = with_errors
+
     @contextlib.contextmanager
     def connection(self, username=None, password=None):
         yield self
