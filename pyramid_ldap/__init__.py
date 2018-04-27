@@ -101,7 +101,7 @@ class Connector(object):
     def authenticate(self, login_unsafe, password_unsafe):
         """Given a login name and a password, return a tuple of ``(dn,
         attrdict)`` if the user exists and their password
-        is correct.  Otherwise returns ``None``.
+        is correct.  Otherwise return ``None``.
 
         In a ``(dn, attrdict)`` return value, ``dn`` will be the
         distinguished name of the authenticated user.  Attrdict will be a
