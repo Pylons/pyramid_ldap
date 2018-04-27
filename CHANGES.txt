@@ -13,6 +13,18 @@
   `LDAPObject` methods. We now use the `pyramid.compat.text_` function to
   support text arguments for python 2 and 3.
 
+- The  method typically deals with
+  untrusted `login` and `password` inputs (i.e. user inputs).
+
+- In versions 0.2 and lower, invalid LDAP strings passed to
+  `pyramid_ldap.Connector.authenticate` would raise `ldap.FILTER_ERROR`. In 0.3
+  and up we use `ldap.filter.escape_filter_chars` to properly escape these prior
+  to running the LDAP search. Applications using pyramid_ldap have always been
+  responsible for making sure the `login` value fits the `ldap.login_filter_tpl`
+  setting in their application. However, if you relied on `ldap.FILTER_ERROR` to
+  catch bad username formats (such as `CORP\username`, where the unescaped `\`
+  is disallowed in LDAP searches), note that now `authenticate` will return
+  `None` instead.
 
 
 0.2
