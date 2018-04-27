@@ -191,6 +191,26 @@ class TestConnector(unittest.TestCase):
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.authenticate('login', 'password'), None)
 
+    def test_authenticate_escapes_login(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        inst.authenticate('BAD\login', 'password')
+        expected_escaped_login = 'BAD\\5clogin'
+        self.assertEqual(registry.ldap_login_query.kw['login'],
+                         expected_escaped_login)
+
+    def test_authenticate_escapes_password(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        inst.authenticate('login', 'bad\*()password')
+        expected_escaped_password = r'bad\5c\2a\28\29password'
+        self.assertEqual(registry.ldap_login_query.kw['password'],
+                         expected_escaped_password)
+
     def test_user_groups_no_ldap_groups_query(self):
         manager = DummyManager()
         inst = self._makeOne(None, manager)
