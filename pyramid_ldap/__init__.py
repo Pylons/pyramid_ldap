@@ -11,6 +11,8 @@ import logging
 import pprint
 import time
 
+from ldap.filter import escape_filter_chars
+
 from pyramid.exceptions import ConfigurationError
 from pyramid.compat import (
     iteritems_,
@@ -96,9 +98,9 @@ class Connector(object):
         self.registry = registry
         self.manager = manager
 
-    def authenticate(self, login, password):
-        """ Given a login name and a password, return a tuple of ``(dn,
-        attrdict)`` if the matching user if the user exists and his password
+    def authenticate(self, login_unsafe, password_unsafe):
+        """Given a login name and a password, return a tuple of ``(dn,
+        attrdict)`` if the matching user if the user exists and their password
         is correct.  Otherwise return ``None``.
 
         In a ``(dn, attrdict)`` return value, ``dn`` will be the
@@ -116,9 +118,31 @@ class Connector(object):
 
         If :meth:`pyramid.config.Configurator.ldap_set_login_query` was not
         called, using this function will raise an
-        :exc:`pyramid.exceptions.ConfiguratorError`."""
-        if password == '':
+        :exc:`pyramid.exceptions.ConfiguratorError`.
+
+        In pyramid_ldap <= version 0.2, authenticating with a login that
+        included the domain (e.g. CORP\exampleuser) would raise
+        `ldap.FILTER_ERROR` because the `\` led to an invalid search string. In
+        pyramid_ldap >= 0.3, the string is escaped so it will not raise an
+        exception. However, it will likely fail to authenticate user
+        `CORP\\5cexampleuser` (the escaped form of login
+        "CORP\exampleuser"). Applications using pyramid_ldap can preprocess the
+        logins to make sure they are formatted correctly for their
+        `ldap.login_filter_tpl` setting.
+        """
+        if password_unsafe == '':
             return None
+
+        # although we can run `search.execute(conn, login, password)` on `None`
+        # values, it will come back with no results and return `None`. It's
+        # better to return early here so that we know we're not passing `None`
+        # values to `escape_filter_chars`, which will raise an `AttributeError`.
+        if login_unsafe is None or password_unsafe is None:
+            return None
+
+        # we escape untrusted inputs `login_unsafe` and `password_unsafe`
+        login = escape_filter_chars(login_unsafe)
+        password = escape_filter_chars(password_unsafe)
 
         with self.manager.connection() as conn:
             search = getattr(self.registry, 'ldap_login_query', None)
