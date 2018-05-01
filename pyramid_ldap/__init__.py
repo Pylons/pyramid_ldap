@@ -21,6 +21,7 @@ from pyramid.compat import (
 
 try:
     from ldappool import ConnectionManager
+
 except ImportError as e: # pragma: no cover
     class ConnectionManager(object):
         def __init__(self, *arg, **kw):
@@ -122,13 +123,13 @@ class Connector(object):
 
         In pyramid_ldap <= version 0.2, authenticating with a login that
         included the domain (e.g. CORP\exampleuser) would raise
-        `ldap.FILTER_ERROR` because the `\` led to an invalid search string. In
-        pyramid_ldap >= 0.3, the string is escaped so it will not raise an
-        exception. However, it will likely fail to authenticate user
-        `CORP\\5cexampleuser` (the escaped form of login
+        ``ldap.FILTER_ERROR`` because the ``\`` led to an invalid search
+        string. In pyramid_ldap >= 0.3, the string is escaped so it will not
+        raise an exception. However, it will likely fail to authenticate user
+        ``CORP\\5cexampleuser`` (the escaped form of login
         "CORP\exampleuser"). Applications using pyramid_ldap can preprocess the
         logins to make sure they are formatted correctly for their
-        `ldap.login_filter_tpl` setting.
+        ``ldap.login_filter_tpl`` setting.
         """
         if password_unsafe == '':
             return None
