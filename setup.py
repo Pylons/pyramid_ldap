@@ -12,7 +12,7 @@ except IOError:
     README = CHANGES = ''
 
 requires = [
-    'pyramid>=1.3a9',
+    'pyramid>=1.3',
     'six', # required by `ldappool` but not in their requirements file
     ]
 if not 'READTHEDOCS' in os.environ:
