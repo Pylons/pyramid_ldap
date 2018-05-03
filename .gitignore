@@ -18,4 +18,6 @@ include/
 .idea/
 distribute-*.tar.gz
 env*/
-coverage.xml
+coverage*.xml
+nosetests*.xml
+.python-version
