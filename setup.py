@@ -15,7 +15,7 @@ requires = [
     'pyramid>=1.3',
     'six',
     ]
-if not 'READTHEDOCS' in os.environ:
+if 'READTHEDOCS' not in os.environ:
     # hail mary for readthedocs
     requires.extend(['ldappool', 'python-ldap'])
 
@@ -24,12 +24,12 @@ sampleapp_extras = [
     'pyramid_debugtoolbar',
     ]
 testing_extras = ['nose', 'coverage']
-docs_extras = ['Sphinx>=1.7.4']
+docs_extras = ['Sphinx >= 1.7.4']
 
 setup(name='pyramid_ldap',
       version='0.2',
       description='pyramid_ldap',
-      long_description=README + '\n\n' +  CHANGES,
+      long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pylons",
@@ -37,7 +37,7 @@ setup(name='pyramid_ldap',
         "Programming Language :: Python :: 2.7",
         "Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP",
         "License :: Repoze Public License",
-        ],
+      ],
       author='Chris McDonough',
       author_email='pylons-discuss@groups.google.com',
       url='https://pylonsproject.org',
@@ -48,14 +48,14 @@ setup(name='pyramid_ldap',
       zip_safe=False,
       install_requires=requires,
       tests_require=requires,
-      extras_require = {
-          'sampleapp':sampleapp_extras,
-          'docs':docs_extras,
-          'testing':testing_extras,
+      extras_require={
+          'sampleapp': sampleapp_extras,
+          'docs': docs_extras,
+          'testing': testing_extras,
           },
       test_suite="pyramid_ldap",
-      entry_points = """\
-      [paste.app_factory]
-      sampleapp = sampleapp:main
+      entry_points="""\
+          [paste.app_factory]
+          sampleapp = sampleapp:main
       """,
       )
