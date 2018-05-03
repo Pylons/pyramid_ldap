@@ -24,7 +24,7 @@ sampleapp_extras = [
     'pyramid_debugtoolbar',
     ]
 testing_extras = ['nose', 'coverage']
-docs_extras = ['Sphinx']
+docs_extras = ['Sphinx>=1.7.4']
 
 setup(name='pyramid_ldap',
       version='0.2',
@@ -40,7 +40,7 @@ setup(name='pyramid_ldap',
         ],
       author='Chris McDonough',
       author_email='pylons-discuss@groups.google.com',
-      url='http://pylonsproject.org',
+      url='https://pylonsproject.org',
       license="BSD-derived (http://www.repoze.org/LICENSE.txt)",
       keywords='web pyramid pylons ldap',
       packages=find_packages(),
