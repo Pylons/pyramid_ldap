@@ -1,3 +1,11 @@
+unreleased
+----------
+
+- Use tox for testing against Python 2.7, 3.6, PEP8, coverage and building
+  docs. Setup Travis CI to run tox. Use pylons-sphinx-themes to fix broken
+  Read The Docs builds.
+  See: https://github.com/Pylons/pyramid_ldap/pull/22
+
 0.2
 ---
 
