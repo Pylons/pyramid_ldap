@@ -24,7 +24,10 @@ sampleapp_extras = [
     'pyramid_debugtoolbar',
     ]
 testing_extras = ['nose', 'coverage']
-docs_extras = ['Sphinx >= 1.7.4']
+docs_extras = [
+    'Sphinx >= 1.7.4',
+    'pylons-sphinx-themes',
+]
 
 setup(name='pyramid_ldap',
       version='0.2',
