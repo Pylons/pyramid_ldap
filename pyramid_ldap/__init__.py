@@ -25,7 +25,7 @@ from pyramid.compat import (
 try:
     from ldappool import ConnectionManager
 
-except ImportError as e:  # pragma: no cover
+except ImportError:  # pragma: no cover
     class ConnectionManager(object):
         def __init__(self, *arg, **kw):
             # this is for benefit of being able to build the docs on rtd.org.
