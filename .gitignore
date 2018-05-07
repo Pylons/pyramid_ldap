@@ -18,7 +18,5 @@ _env*/
 .coveragerc
 .coverage.*
 .tox/
-nosetests.xml
-coverage.xml
-nosetests-*.xml
-coverage-*.xml
+.python-version
+
