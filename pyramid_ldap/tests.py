@@ -9,6 +9,7 @@ from pyramid.compat import (
 from pyramid import testing
 from pyramid.exceptions import ConfigurationError
 
+
 class Test_includeme(unittest.TestCase):
     def _callFUT(self, config):
         from pyramid_ldap import includeme
@@ -46,13 +47,13 @@ class Test__ldap_decode(unittest.TestCase):
 
     def test_decode_dict(self):
         import ldap
-        result = self._callFUT({'abc':'def'})
+        result = self._callFUT({'abc': 'def'})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
         self.assertEqual(result[text_('abc')], text_('def'))
 
     def test_decode_nested(self):
         import ldap
-        result = self._callFUT({'abc':['def', 'jkl']})
+        result = self._callFUT({'abc': ['def', 'jkl']})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
         self.assertEqual(result[text_('abc')], [text_('def'), text_('jkl')])
 
@@ -60,6 +61,7 @@ class Test__ldap_decode(unittest.TestCase):
         uid = b'\xdd\xafw:PuUO\x8a#\x17\xaa\xc2\xc7\x8e\xf6'
         result = self._callFUT(uid)
         self.assertTrue(isinstance(result, bytes))
+
 
 class Test_groupfinder(unittest.TestCase):
     def _callFUT(self, dn, request):
@@ -78,6 +80,7 @@ class Test_groupfinder(unittest.TestCase):
         result = self._callFUT('dn', request)
         self.assertEqual(result, ['groupdn'])
 
+
 class Test_get_ldap_connector(unittest.TestCase):
     def _callFUT(self, request):
         from pyramid_ldap import get_ldap_connector
@@ -93,6 +96,7 @@ class Test_get_ldap_connector(unittest.TestCase):
         result = self._callFUT(request)
         self.assertEqual(result, True)
 
+
 class Test_ldap_setup(unittest.TestCase):
     def _callFUT(self, config, uri, **kw):
         from pyramid_ldap import ldap_setup
@@ -106,6 +110,7 @@ class Test_ldap_setup(unittest.TestCase):
         self.assertEqual(config.prop_reify, True)
         request = testing.DummyRequest()
         self.assertEqual(config.prop(request).__class__, Connector)
+
 
 class Test_ldap_set_groups_query(unittest.TestCase):
     def _callFUT(self, config, base_dn, filter_tmpl, **kw):
@@ -122,6 +127,7 @@ class Test_ldap_set_groups_query(unittest.TestCase):
                          ldap.SCOPE_SUBTREE)
         self.assertEqual(config.registry.ldap_groups_query.cache_period, 0)
 
+
 class Test_ldap_set_login_query(unittest.TestCase):
     def _callFUT(self, config, base_dn, filter_tmpl, **kw):
         from pyramid_ldap import ldap_set_login_query
@@ -136,6 +142,7 @@ class Test_ldap_set_login_query(unittest.TestCase):
         self.assertEqual(config.registry.ldap_login_query.scope,
                          ldap.SCOPE_ONELEVEL)
         self.assertEqual(config.registry.ldap_login_query.cache_period, 0)
+
 
 class TestConnector(unittest.TestCase):
     def _makeOne(self, registry, manager):
@@ -231,6 +238,7 @@ class TestConnector(unittest.TestCase):
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.user_groups(None), None)
 
+
 class Test_LDAPQuery(unittest.TestCase):
     def _makeOne(self, base_dn, filter_tmpl, scope, cache_period):
         from pyramid_ldap import _LDAPQuery
@@ -271,6 +279,7 @@ class Test_LDAPQuery(unittest.TestCase):
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'def')
 
+
 class DummyLDAPConnector(object):
     def __init__(self, dn, group_list):
         self.dn = dn
@@ -279,12 +288,15 @@ class DummyLDAPConnector(object):
     def user_groups(self, dn):
         return self.group_list
 
+
 class Dummy(object):
     def __init__(self, *arg, **kw):
         pass
 
+
 class DummyConfig(object):
     introspectable = Dummy
+
     def __init__(self):
         self.registry = Dummy()
         self.directives = []
@@ -301,6 +313,7 @@ class DummyConfig(object):
         if callable:
             callable()
 
+
 class DummyManager(object):
     def __init__(self, with_errors=()):
         self.with_errors = with_errors
@@ -313,6 +326,7 @@ class DummyManager(object):
             if e is not None:
                 raise e
 
+
 class DummySearch(object):
     def __init__(self, result, exc=None):
         self.result = result
@@ -324,6 +338,7 @@ class DummySearch(object):
         self.kw = kw
         return self.result
 
+
 class DummyConnection(object):
     def __init__(self, result):
         self.result = result
@@ -331,4 +346,3 @@ class DummyConnection(object):
     def search_s(self, *arg):
         self.arg = arg
         return self.result
-
