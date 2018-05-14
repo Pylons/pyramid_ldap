@@ -9,6 +9,7 @@ from pyramid.compat import (
 from pyramid import testing
 from pyramid.exceptions import ConfigurationError
 
+
 class Test_includeme(unittest.TestCase):
     def _callFUT(self, config):
         from pyramid_ldap import includeme
@@ -20,7 +21,7 @@ class Test_includeme(unittest.TestCase):
         self.assertEqual(config.directives,
                          ['ldap_setup', 'ldap_set_login_query',
                           'ldap_set_groups_query'])
-        
+
 
 class Test__ldap_decode(unittest.TestCase):
     def _callFUT(self, val):
@@ -46,13 +47,13 @@ class Test__ldap_decode(unittest.TestCase):
 
     def test_decode_dict(self):
         import ldap
-        result = self._callFUT({'abc':'def'})
+        result = self._callFUT({'abc': 'def'})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
         self.assertEqual(result[text_('abc')], text_('def'))
 
     def test_decode_nested(self):
         import ldap
-        result = self._callFUT({'abc':['def', 'jkl']})
+        result = self._callFUT({'abc': ['def', 'jkl']})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
         self.assertEqual(result[text_('abc')], [text_('def'), text_('jkl')])
 
@@ -60,6 +61,7 @@ class Test__ldap_decode(unittest.TestCase):
         uid = b'\xdd\xafw:PuUO\x8a#\x17\xaa\xc2\xc7\x8e\xf6'
         result = self._callFUT(uid)
         self.assertTrue(isinstance(result, bytes))
+
 
 class Test_groupfinder(unittest.TestCase):
     def _callFUT(self, dn, request):
@@ -78,6 +80,7 @@ class Test_groupfinder(unittest.TestCase):
         result = self._callFUT('dn', request)
         self.assertEqual(result, ['groupdn'])
 
+
 class Test_get_ldap_connector(unittest.TestCase):
     def _callFUT(self, request):
         from pyramid_ldap import get_ldap_connector
@@ -86,12 +89,13 @@ class Test_get_ldap_connector(unittest.TestCase):
     def test_no_connector(self):
         request = testing.DummyRequest()
         self.assertRaises(ConfigurationError, self._callFUT, request)
-        
+
     def test_with_connector(self):
         request = testing.DummyRequest()
         request.ldap_connector = True
         result = self._callFUT(request)
         self.assertEqual(result, True)
+
 
 class Test_ldap_setup(unittest.TestCase):
     def _callFUT(self, config, uri, **kw):
@@ -106,6 +110,7 @@ class Test_ldap_setup(unittest.TestCase):
         self.assertEqual(config.prop_reify, True)
         request = testing.DummyRequest()
         self.assertEqual(config.prop(request).__class__, Connector)
+
 
 class Test_ldap_set_groups_query(unittest.TestCase):
     def _callFUT(self, config, base_dn, filter_tmpl, **kw):
@@ -122,6 +127,7 @@ class Test_ldap_set_groups_query(unittest.TestCase):
                          ldap.SCOPE_SUBTREE)
         self.assertEqual(config.registry.ldap_groups_query.cache_period, 0)
 
+
 class Test_ldap_set_login_query(unittest.TestCase):
     def _callFUT(self, config, base_dn, filter_tmpl, **kw):
         from pyramid_ldap import ldap_set_login_query
@@ -137,6 +143,7 @@ class Test_ldap_set_login_query(unittest.TestCase):
                          ldap.SCOPE_ONELEVEL)
         self.assertEqual(config.registry.ldap_login_query.cache_period, 0)
 
+
 class TestConnector(unittest.TestCase):
     def _makeOne(self, registry, manager):
         from pyramid_ldap import Connector
@@ -145,28 +152,43 @@ class TestConnector(unittest.TestCase):
     def test_authenticate_no_ldap_login_query(self):
         manager = DummyManager()
         inst = self._makeOne(None, manager)
-        self.assertRaises(ConfigurationError, inst.authenticate, None, None)
+        self.assertRaises(ConfigurationError, inst.authenticate,
+                          'login', 'password')
 
-    def test_authenticate_search_returns_non_one_result(self):
+    def test_authenticate_search_none_login_returns_none(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        self.assertEqual(inst.authenticate(None, 'password'), None)
+
+    def test_authenticate_search_none_password_returns_none(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        self.assertEqual(inst.authenticate('login', None), None)
+
+    def test_authenticate_search_returns_none_result(self):
         manager = DummyManager()
         registry = Dummy()
         registry.ldap_login_query = DummySearch([])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), None)
+        self.assertEqual(inst.authenticate('login', 'password'), None)
 
     def test_authenticate_empty_password(self):
         manager = DummyManager()
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate('foo', ''), None)
+        self.assertEqual(inst.authenticate('login', ''), None)
 
     def test_authenticate_search_returns_one_result(self):
         manager = DummyManager()
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), ('a', 'b'))
+        self.assertEqual(inst.authenticate('login', 'password'), ('a', 'b'))
 
     def test_authenticate_search_bind_raises(self):
         import ldap
@@ -174,7 +196,27 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        self.assertEqual(inst.authenticate(None, None), None)
+        self.assertEqual(inst.authenticate('login', 'password'), None)
+
+    def test_authenticate_escapes_login(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        inst.authenticate('BAD\login', 'password')
+        expected_escaped_login = 'BAD\\5clogin'
+        self.assertEqual(registry.ldap_login_query.kw['login'],
+                         expected_escaped_login)
+
+    def test_authenticate_escapes_password(self):
+        manager = DummyManager()
+        registry = Dummy()
+        registry.ldap_login_query = DummySearch([('a', 'b')])
+        inst = self._makeOne(registry, manager)
+        inst.authenticate('login', 'bad\*()password')
+        expected_escaped_password = r'bad\5c\2a\28\29password'
+        self.assertEqual(registry.ldap_login_query.kw['password'],
+                         expected_escaped_password)
 
     def test_user_groups_no_ldap_groups_query(self):
         manager = DummyManager()
@@ -196,6 +238,7 @@ class TestConnector(unittest.TestCase):
         inst = self._makeOne(registry, manager)
         self.assertEqual(inst.user_groups(None), None)
 
+
 class Test_LDAPQuery(unittest.TestCase):
     def _makeOne(self, base_dn, filter_tmpl, scope, cache_period):
         from pyramid_ldap import _LDAPQuery
@@ -203,7 +246,7 @@ class Test_LDAPQuery(unittest.TestCase):
 
     def test_query_cache_no_rollover(self):
         inst = self._makeOne(None, None, None, 1)
-        inst.last_timeslice = sys.maxint
+        inst.last_timeslice = sys.maxsize
         inst.cache['foo'] = 'bar'
         self.assertEqual(inst.query_cache('foo'), 'bar')
 
@@ -230,12 +273,13 @@ class Test_LDAPQuery(unittest.TestCase):
 
     def test_execute_with_cache_period_hit(self):
         inst = self._makeOne('%(login)s', '%(login)s', None, 1)
-        inst.last_timeslice = sys.maxint
+        inst.last_timeslice = sys.maxsize
         inst.cache[('foo', None, 'foo')] = 'def'
         conn = DummyConnection('abc')
         result = inst.execute(conn, login='foo')
         self.assertEqual(result, 'def')
-        
+
+
 class DummyLDAPConnector(object):
     def __init__(self, dn, group_list):
         self.dn = dn
@@ -243,20 +287,23 @@ class DummyLDAPConnector(object):
 
     def user_groups(self, dn):
         return self.group_list
-        
+
+
 class Dummy(object):
     def __init__(self, *arg, **kw):
         pass
-    
+
+
 class DummyConfig(object):
     introspectable = Dummy
+
     def __init__(self):
         self.registry = Dummy()
         self.directives = []
 
     def add_directive(self, name, fn):
         self.directives.append(name)
-        
+
     def set_request_property(self, prop, name, reify=False):
         self.prop_reify = reify
         self.prop_name = name
@@ -265,10 +312,12 @@ class DummyConfig(object):
     def action(self, discriminator, callable, introspectables=()):
         if callable:
             callable()
-    
+
+
 class DummyManager(object):
     def __init__(self, with_errors=()):
         self.with_errors = with_errors
+
     @contextlib.contextmanager
     def connection(self, username=None, password=None):
         yield self
@@ -276,7 +325,8 @@ class DummyManager(object):
             e = self.with_errors.pop(0)
             if e is not None:
                 raise e
-        
+
+
 class DummySearch(object):
     def __init__(self, result, exc=None):
         self.result = result
@@ -287,7 +337,8 @@ class DummySearch(object):
             raise self.exc
         self.kw = kw
         return self.result
-    
+
+
 class DummyConnection(object):
     def __init__(self, result):
         self.result = result
@@ -295,4 +346,3 @@ class DummyConnection(object):
     def search_s(self, *arg):
         self.arg = arg
         return self.result
-    

@@ -13,11 +13,11 @@ except IOError:
 
 requires = [
     'pyramid>=1.3',
-    'six',
+    'six', # required by `ldappool` but not in their requirements file
     ]
 if 'READTHEDOCS' not in os.environ:
     # hail mary for readthedocs
-    requires.extend(['ldappool', 'python-ldap'])
+    requires.extend(['ldappool>=2.2.0', 'python-ldap>=3.0'])
 
 sampleapp_extras = [
     'waitress',
@@ -30,14 +30,15 @@ docs_extras = [
 ]
 
 setup(name='pyramid_ldap',
-      version='0.2',
+      version='0.3',
       description='pyramid_ldap',
       long_description=README + '\n\n' + CHANGES,
       classifiers=[
         "Programming Language :: Python",
         "Framework :: Pylons",
-        "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Topic :: System :: Systems Administration :: Authentication/Directory :: LDAP",
         "License :: Repoze Public License",
       ],
