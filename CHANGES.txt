@@ -23,10 +23,6 @@
   ``CORP\username``, where the unescaped ``\`` is disallowed in LDAP searches),
   note that now ``authenticate`` will return ``None`` instead.
 
-
-unreleased
-----------
-
 - Use tox for testing against Python 2.7, 3.6, PEP8, coverage and building
   docs. Setup Travis CI to run tox. Use pylons-sphinx-themes to fix broken
   Read The Docs builds.
