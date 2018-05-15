@@ -1,5 +1,10 @@
-0.3
----
+0.3.1 (2018-05-15)
+------------------
+
+- Added wheels license to setup.cfg
+
+0.3 (2018-05-15)
+----------------
 
 - Python 3 is now supported! This is possible thanks to python-ldap supporting
   python 3
