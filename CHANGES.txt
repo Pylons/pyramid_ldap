@@ -1,5 +1,10 @@
-0.3
----
+0.3.1 (2018-05-15)
+------------------
+
+- Added wheels license to setup.cfg
+
+0.3 (2018-05-15)
+----------------
 
 - Python 3 is now supported! This is possible thanks to python-ldap supporting
   python 3
@@ -22,10 +27,6 @@
   on ``ldap.FILTER_ERROR`` to catch bad username formats (such as
   ``CORP\username``, where the unescaped ``\`` is disallowed in LDAP searches),
   note that now ``authenticate`` will return ``None`` instead.
-
-
-unreleased
-----------
 
 - Use tox for testing against Python 2.7, 3.6, PEP8, coverage and building
   docs. Setup Travis CI to run tox. Use pylons-sphinx-themes to fix broken
