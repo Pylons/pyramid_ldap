@@ -304,7 +304,7 @@ class DummyConfig(object):
     def add_directive(self, name, fn):
         self.directives.append(name)
 
-    def set_request_property(self, prop, name, reify=False):
+    def add_request_method(self, prop, name, reify=False):
         self.prop_reify = reify
         self.prop_name = name
         self.prop = prop

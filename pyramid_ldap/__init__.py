@@ -301,7 +301,7 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
         registry = request.registry
         return Connector(registry, manager)
 
-    config.set_request_property(get_connector, 'ldap_connector', reify=True)
+    config.add_request_method(get_connector, 'ldap_connector', reify=True)
 
     intr = config.introspectable(
         'pyramid_ldap setup',
