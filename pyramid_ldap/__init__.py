@@ -116,7 +116,7 @@ class Connector(object):
         dictionary mapping LDAP user attributes to sequences of values.  The
         keys and values in the dictionary values provided will be decoded
         from UTF-8, recursively, where possible.  The dictionary returned is
-        a case-insensitive dictionary implemenation.
+        a case-insensitive dictionary implementation.
 
         A zero length password will always be considered invalid since it
         results in a request for "unauthenticated authentication" which should
@@ -183,7 +183,7 @@ class Connector(object):
         mapping LDAP group attributes to sequences of values.  The keys and
         values in the dictionary values provided will be decoded from UTF-8,
         recursively, where possible.  The dictionary returned is a
-        case-insensitive dictionary implemenation.
+        case-insensitive dictionary implementation.
 
         If :meth:`pyramid.config.Configurator.ldap_set_groups_query` was not
         called, using this function will raise an
