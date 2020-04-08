@@ -108,6 +108,7 @@ class Test_ldap_setup(unittest.TestCase):
         self._callFUT(config, 'ldap://')
         self.assertEqual(config.prop_name, 'ldap_connector')
         self.assertEqual(config.prop_reify, True)
+        self.assertEqual(config.prop_property, True)
         request = testing.DummyRequest()
         self.assertEqual(config.prop(request).__class__, Connector)
 
@@ -304,7 +305,8 @@ class DummyConfig(object):
     def add_directive(self, name, fn):
         self.directives.append(name)
 
-    def set_request_property(self, prop, name, reify=False):
+    def add_request_method(self, prop, name, property=False, reify=False):
+        self.prop_property = property
         self.prop_reify = reify
         self.prop_name = name
         self.prop = prop
