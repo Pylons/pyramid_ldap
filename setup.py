@@ -13,7 +13,7 @@ except IOError:
 
 requires = [
     'pyramid>=1.3',
-    'six', # required by `ldappool` but not in their requirements file
+    'six',  # required by `ldappool` but not in their requirements file
     ]
 if 'READTHEDOCS' not in os.environ:
     # hail mary for readthedocs

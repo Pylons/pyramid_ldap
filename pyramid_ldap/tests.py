@@ -55,7 +55,8 @@ class Test__ldap_decode(unittest.TestCase):
         import ldap
         result = self._callFUT({'abc': ['def', 'jkl']})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
-        self.assertEqual(result[ensure_text('abc')], [ensure_text('def'), ensure_text('jkl')])
+        self.assertEqual(result[ensure_text('abc')],
+                         [ensure_text('def'), ensure_text('jkl')])
 
     def test_undecodeable(self):
         uid = b'\xdd\xafw:PuUO\x8a#\x17\xaa\xc2\xc7\x8e\xf6'
@@ -203,7 +204,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        inst.authenticate('BAD\login', 'password')
+        inst.authenticate('BAD\\login', 'password')
         expected_escaped_login = 'BAD\\5clogin'
         self.assertEqual(registry.ldap_login_query.kw['login'],
                          expected_escaped_login)
@@ -213,7 +214,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        inst.authenticate('login', 'bad\*()password')
+        inst.authenticate('login', 'bad\\*()password')
         expected_escaped_password = r'bad\5c\2a\28\29password'
         self.assertEqual(registry.ldap_login_query.kw['password'],
                          expected_escaped_password)
@@ -304,7 +305,8 @@ class DummyConfig(object):
     def add_directive(self, name, fn):
         self.directives.append(name)
 
-    def add_request_method(self, callable=None, name=None, property=False, reify=False):
+    def add_request_method(self, callable=None, name=None, property=False,
+                           reify=False):
         self.prop_callable = callable
         self.prop_name = name
         self.prop_property = property
