@@ -16,9 +16,9 @@ import time
 from ldap.filter import escape_filter_chars
 
 from pyramid.exceptions import ConfigurationError
-from pyramid.compat import (
-    iteritems_,
-    text_,
+
+from six import (
+    ensure_text, iteritems
 )
 
 
@@ -70,9 +70,9 @@ class _LDAPQuery(object):
 
     def execute(self, conn, **kw):
         cache_key = (
-            text_(self.base_dn % kw, 'utf-8'),
+            ensure_text(self.base_dn % kw, 'utf-8'),
             self.scope,
-            text_(self.filter_tmpl % kw, 'utf-8')
+            ensure_text(self.filter_tmpl % kw, 'utf-8')
             )
 
         logger.debug('searching for %r' % (cache_key,))
@@ -301,7 +301,7 @@ def ldap_setup(config, uri, bind=None, passwd=None, pool_size=10, retry_max=3,
         registry = request.registry
         return Connector(registry, manager)
 
-    config.set_request_property(get_connector, 'ldap_connector', reify=True)
+    config.add_request_method(get_connector, 'ldap_connector', reify=True)
 
     intr = config.introspectable(
         'pyramid_ldap setup',
@@ -364,12 +364,12 @@ class _Decoder(object):
 
     def decode(self, value):
         """
-        Uses `pyramid.compat.text_` to convert values to `unicode` in python 2
+        Uses `six.ensure_text` to convert values to `unicode` in python 2
         and `str` in python 3.
         """
         try:
             if isinstance(value, (bytes, str)):
-                value = text_(value, encoding=self.encoding)
+                value = ensure_text(value, encoding=self.encoding)
             elif isinstance(value, list):
                 value = self._decode_list(value)
             elif isinstance(value, tuple):
@@ -390,7 +390,7 @@ class _Decoder(object):
         # for search results.
         decoded = self.ldap.cidict.cidict()
 
-        for k, v in iteritems_(value):
+        for k, v in iteritems(value):
             decoded[self.decode(k)] = self.decode(v)
 
         return decoded
