@@ -129,12 +129,12 @@ class Connector(object):
         :exc:`pyramid.exceptions.ConfiguratorError`.
 
         In pyramid_ldap <= version 0.2, authenticating with a login that
-        included the domain (e.g., ``CORP\exampleuser``) would raise
-        ``ldap.FILTER_ERROR`` because the ``\`` led to an invalid search
+        included the domain (e.g., ``CORP\\exampleuser``) would raise
+        ``ldap.FILTER_ERROR`` because the ``\\`` led to an invalid search
         string. In pyramid_ldap >= 0.3, the string is escaped so it will not
         raise an exception. However, it will likely fail to authenticate user
         ``CORP\\5cexampleuser`` (the escaped form of login
-        ``CORP\exampleuser``). Applications using pyramid_ldap can preprocess
+        ``CORP\\exampleuser``). Applications using pyramid_ldap can preprocess
         the logins to make sure they are formatted correctly for their
         ``ldap.login_filter_tpl`` setting.
         """
