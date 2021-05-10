@@ -2,10 +2,10 @@ import contextlib
 import unittest
 import sys
 
-from pyramid.compat import (
-    text_type,
-    text_,
-    )
+from six import (
+    ensure_text, text_type
+)
+
 from pyramid import testing
 from pyramid.exceptions import ConfigurationError
 
@@ -31,31 +31,32 @@ class Test__ldap_decode(unittest.TestCase):
     def test_decode_str(self):
         result = self._callFUT('abc')
         self.assertEqual(type(result), text_type)
-        self.assertEqual(result, text_('abc'))
+        self.assertEqual(result, ensure_text('abc'))
 
     def test_decode_list(self):
         result = self._callFUT(['abc', 'def'])
         self.assertEqual(type(result), list)
-        self.assertEqual(result[0], text_('abc'))
-        self.assertEqual(result[1], text_('def'))
+        self.assertEqual(result[0], ensure_text('abc'))
+        self.assertEqual(result[1], ensure_text('def'))
 
     def test_decode_tuple(self):
         result = self._callFUT(('abc', 'def'))
         self.assertEqual(type(result), tuple)
-        self.assertEqual(result[0], text_('abc'))
-        self.assertEqual(result[1], text_('def'))
+        self.assertEqual(result[0], ensure_text('abc'))
+        self.assertEqual(result[1], ensure_text('def'))
 
     def test_decode_dict(self):
         import ldap
         result = self._callFUT({'abc': 'def'})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
-        self.assertEqual(result[text_('abc')], text_('def'))
+        self.assertEqual(result[ensure_text('abc')], ensure_text('def'))
 
     def test_decode_nested(self):
         import ldap
         result = self._callFUT({'abc': ['def', 'jkl']})
         self.assertTrue(isinstance(result, ldap.cidict.cidict))
-        self.assertEqual(result[text_('abc')], [text_('def'), text_('jkl')])
+        self.assertEqual(result[ensure_text('abc')],
+                         [ensure_text('def'), ensure_text('jkl')])
 
     def test_undecodeable(self):
         uid = b'\xdd\xafw:PuUO\x8a#\x17\xaa\xc2\xc7\x8e\xf6'
@@ -109,7 +110,7 @@ class Test_ldap_setup(unittest.TestCase):
         self.assertEqual(config.prop_name, 'ldap_connector')
         self.assertEqual(config.prop_reify, True)
         request = testing.DummyRequest()
-        self.assertEqual(config.prop(request).__class__, Connector)
+        self.assertEqual(config.prop_callable(request).__class__, Connector)
 
 
 class Test_ldap_set_groups_query(unittest.TestCase):
@@ -203,7 +204,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        inst.authenticate('BAD\login', 'password')
+        inst.authenticate('BAD\\login', 'password')
         expected_escaped_login = 'BAD\\5clogin'
         self.assertEqual(registry.ldap_login_query.kw['login'],
                          expected_escaped_login)
@@ -213,7 +214,7 @@ class TestConnector(unittest.TestCase):
         registry = Dummy()
         registry.ldap_login_query = DummySearch([('a', 'b')])
         inst = self._makeOne(registry, manager)
-        inst.authenticate('login', 'bad\*()password')
+        inst.authenticate('login', 'bad\\*()password')
         expected_escaped_password = r'bad\5c\2a\28\29password'
         self.assertEqual(registry.ldap_login_query.kw['password'],
                          expected_escaped_password)
@@ -304,10 +305,12 @@ class DummyConfig(object):
     def add_directive(self, name, fn):
         self.directives.append(name)
 
-    def set_request_property(self, prop, name, reify=False):
-        self.prop_reify = reify
+    def add_request_method(self, callable=None, name=None, property=False,
+                           reify=False):
+        self.prop_callable = callable
         self.prop_name = name
-        self.prop = prop
+        self.prop_property = property
+        self.prop_reify = reify
 
     def action(self, discriminator, callable, introspectables=()):
         if callable:
