@@ -1,6 +1,7 @@
 ############
 Pyramid LDAP
 ############
+# Need to update to latest python version
 
 ``pyramid_ldap`` provides LDAP authentication services for your Pyramid
 application.  Thanks to the ever-awesome `SurveyMonkey
