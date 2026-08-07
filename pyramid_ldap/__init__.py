@@ -106,7 +106,7 @@ class Connector(object):
         self.registry = registry
         self.manager = manager
 
-    def authenticate(self, login_unsafe, password_unsafe):
+    def authenticate(self, login, password):
         """Given a login name and a password, return a tuple of ``(dn,
         attrdict)`` if the user exists and their password
         is correct.  Otherwise return ``None``.
@@ -138,7 +138,7 @@ class Connector(object):
         the logins to make sure they are formatted correctly for their
         ``ldap.login_filter_tpl`` setting.
         """
-        if password_unsafe == '':
+        if password == '':
             return None
 
         # although we can run `search.execute(conn, login, password)` on `None`
@@ -146,12 +146,8 @@ class Connector(object):
         # better to return early here so that we know we're not passing `None`
         # values to `escape_filter_chars`, which will raise an
         # `AttributeError`.
-        if login_unsafe is None or password_unsafe is None:
+        if login is None or password is None:
             return None
-
-        # we escape untrusted inputs `login_unsafe` and `password_unsafe`
-        login = escape_filter_chars(login_unsafe)
-        password = escape_filter_chars(password_unsafe)
 
         with self.manager.connection() as conn:
             search = getattr(self.registry, 'ldap_login_query', None)
@@ -159,7 +155,9 @@ class Connector(object):
                 raise ConfigurationError(
                     'ldap_set_login_query was not called during setup')
 
-            result = search.execute(conn, login=login, password=password)
+            result = search.execute(conn,
+                                    login=escape_filter_chars(login),
+                                    password=escape_filter_chars(password))
             if len(result) == 1:
                 login_dn = result[0][0]
             else:
